@@ -95,6 +95,7 @@ func sendAddr(address string) {
 	payload := gobEncode(nodes)
 	request := append(commandToBytes("addr"), payload...)
 
+	fmt.Printf("%d is not available\n", 1)
 	sendData(address, request)
 }
 
@@ -102,7 +103,7 @@ func sendBlock(addr string, b *Block) {
 	data := block{nodeAddress, b.Serialize()}
 	payload := gobEncode(data)
 	request := append(commandToBytes("block"), payload...)
-
+	fmt.Printf("%d is not available\n", 2)
 	sendData(addr, request)
 }
 
@@ -135,12 +136,14 @@ func sendInv(address, kind string, items [][]byte) {
 	payload := gobEncode(inventory)
 	request := append(commandToBytes("inv"), payload...)
 
+	fmt.Printf("%d is not available\n", 4)
 	sendData(address, request)
 }
 
 func sendGetBlocks(address string) {
 	payload := gobEncode(getblocks{nodeAddress})
 	request := append(commandToBytes("getblocks"), payload...)
+	fmt.Printf("%d is not available\n", 5)
 
 	sendData(address, request)
 }
@@ -149,6 +152,7 @@ func sendGetData(address, kind string, id []byte) {
 	payload := gobEncode(getdata{nodeAddress, kind, id})
 	request := append(commandToBytes("getdata"), payload...)
 
+	fmt.Printf("%d is not available\n", 6)
 	sendData(address, request)
 }
 
@@ -156,6 +160,7 @@ func sendTx(addr string, tnx *Transaction) {
 	data := tx{nodeAddress, tnx.Serialize()}
 	payload := gobEncode(data)
 	request := append(commandToBytes("tx"), payload...)
+	fmt.Printf("%d is not available\n", 7)
 
 	sendData(addr, request)
 }
@@ -165,6 +170,7 @@ func sendVersion(addr string, bc *Blockchain) {
 	payload := gobEncode(verzion{nodeVersion, bestHeight, nodeAddress})
 
 	request := append(commandToBytes("version"), payload...)
+	fmt.Printf("%d is not available\n", 8)
 
 	sendData(addr, request)
 }
@@ -419,7 +425,6 @@ func handleConnection(conn net.Conn, bc *Blockchain) {
 
 // StartServer starts a node
 func StartServer(nodeID, minerAddress string) {
-	// nodeAddress = fmt.Sprintf("localhost:%s", nodeID)
 	miningAddress = minerAddress
 	ln, err := net.Listen(protocol, ":3000")
 	if err != nil {
@@ -428,6 +433,13 @@ func StartServer(nodeID, minerAddress string) {
 	defer ln.Close()
 
 	bc := NewBlockchain(nodeID)
+
+	conn, err := ln.Accept()
+	ip := conn.LocalAddr()
+	nodeAddress = fmt.Sprintf("%s:3000", ip)
+	if err != nil {
+		log.Panic(err)
+	}
 
 	if nodeAddress != knownNodes[0] {
 		sendVersion(knownNodes[0], bc)
