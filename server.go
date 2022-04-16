@@ -28,8 +28,8 @@ type addr struct {
 }
 
 type block struct {
-	// AddrFrom string
-	Block []byte
+	AddrFrom string
+	Block    []byte
 }
 
 type getblocks struct {
@@ -37,26 +37,26 @@ type getblocks struct {
 }
 
 type getdata struct {
-	// AddrFrom string
-	Type string
-	ID   []byte
+	AddrFrom string
+	Type     string
+	ID       []byte
 }
 
 type inv struct {
-	// AddrFrom string
-	Type  string
-	Items [][]byte
+	AddrFrom string
+	Type     string
+	Items    [][]byte
 }
 
 type tx struct {
-	// AddFrom     string
+	AddrFrom    string
 	Transaction []byte
 }
 
 type verzion struct {
 	Version    int
 	BestHeight int
-	// AddrFrom   string
+	AddrFrom   string
 }
 
 func commandToBytes(command string) []byte {
@@ -101,7 +101,7 @@ func sendAddr(address string) {
 }
 
 func sendBlock(addr string, b *Block) {
-	data := block{b.Serialize()}
+	data := block{nodeAddress, b.Serialize()}
 	payload := gobEncode(data)
 	request := append(commandToBytes("block"), payload...)
 	sendData(addr, request)
@@ -132,7 +132,7 @@ func sendData(addr string, data []byte) {
 }
 
 func sendInv(address, kind string, items [][]byte) {
-	inventory := inv{kind, items}
+	inventory := inv{nodeAddress, kind, items}
 	payload := gobEncode(inventory)
 	request := append(commandToBytes("inv"), payload...)
 
@@ -147,14 +147,14 @@ func sendGetBlocks(address string) {
 }
 
 func sendGetData(address, kind string, id []byte) {
-	payload := gobEncode(getdata{kind, id})
+	payload := gobEncode(getdata{nodeAddress, kind, id})
 	request := append(commandToBytes("getdata"), payload...)
 
 	sendData(address, request)
 }
 
 func sendTx(addr string, tnx *Transaction) {
-	data := tx{tnx.Serialize()}
+	data := tx{nodeAddress, tnx.Serialize()}
 	payload := gobEncode(data)
 	request := append(commandToBytes("tx"), payload...)
 
@@ -163,7 +163,7 @@ func sendTx(addr string, tnx *Transaction) {
 
 func sendVersion(addr string, bc *Blockchain) {
 	bestHeight := bc.GetBestHeight()
-	payload := gobEncode(verzion{nodeVersion, bestHeight})
+	payload := gobEncode(verzion{nodeVersion, bestHeight, nodeAddress})
 	request := append(commandToBytes("version"), payload...)
 
 	sendData(addr, request)
@@ -296,7 +296,7 @@ func handleGetData(request []byte, bc *Blockchain, addrFrom string) {
 	}
 }
 
-func handleTx(request []byte, bc *Blockchain, addrFrom, addrLocal string) {
+func handleTx(request []byte, bc *Blockchain, addrFrom string) {
 	var buff bytes.Buffer
 	var payload tx
 
@@ -410,7 +410,7 @@ func handleConnection(conn net.Conn, bc *Blockchain) {
 	case "getdata":
 		handleGetData(request, bc, addrFrom)
 	case "tx":
-		handleTx(request, bc, addrFrom, addrLocal)
+		handleTx(request, bc, addrFrom)
 	case "version":
 		handleVersion(request, bc, addrFrom)
 	default:
@@ -445,7 +445,6 @@ func StartServer(nodeID, minerAddress string) {
 				dif += 1
 				if nodeAddress != knownNodes[0] {
 					sendVersion(knownNodes[0], bc)
-					fmt.Print(nodeAddress)
 					break
 				}
 				dif -= 1
