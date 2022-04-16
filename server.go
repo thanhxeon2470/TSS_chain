@@ -449,7 +449,8 @@ func StartServer(nodeID, minerAddress string) {
 			if ipnet.IP.To4() != nil {
 				nodeAddress = fmt.Sprintf("%s:3000", ipnet.IP.String())
 				dif += 1
-				if nodeAddress == knownNodes[0] {
+				if nodeAddress != knownNodes[0] {
+					sendVersion(knownNodes[0], bc)
 					break
 				}
 				dif -= 1
@@ -457,9 +458,9 @@ func StartServer(nodeID, minerAddress string) {
 		}
 	}
 
-	if dif == 0 {
-		sendVersion(knownNodes[0], bc)
-	}
+	// if dif == 0 {
+	// 	sendVersion(knownNodes[0], bc)
+	// }
 
 	for {
 		conn, err := ln.Accept()
