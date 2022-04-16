@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
+	"os"
 )
 
 const protocol = "tcp"
@@ -17,7 +18,7 @@ const commandLength = 12
 
 var nodeAddress string
 var miningAddress string
-var knownNodes = []string{"localhost:3000"}
+var knownNodes = []string{"192.168.1.122:3000"}
 var blocksInTransit = [][]byte{}
 var mempool = make(map[string]Transaction)
 
@@ -434,14 +435,36 @@ func StartServer(nodeID, minerAddress string) {
 
 	bc := NewBlockchain(nodeID)
 
-	conn, err := ln.Accept()
-	ip := conn.LocalAddr()
-	nodeAddress = fmt.Sprintf("%s:3000", ip)
+	// fmt.Printf("ciu ciu1")
+	// ip := ln.Addr().String()
+	// nodeAddress = fmt.Sprintf("%s:3000", ip)
+	// if err != nil {
+	// log.Panic(err)
+	// }
+	// fmt.Printf("ciu ciu2")
+	// fmt.Printf("abcbcb %s ==", ip)
+
+	addrs, err := net.InterfaceAddrs()
 	if err != nil {
-		log.Panic(err)
+		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
+		os.Exit(1)
 	}
 
-	if nodeAddress != knownNodes[0] {
+	dif := 0
+	for _, a := range addrs {
+		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
+			if ipnet.IP.To4() != nil {
+				nodeAddress = fmt.Sprintf("%s:3000", ipnet.IP.String())
+				dif += 1
+				if nodeAddress == knownNodes[0] {
+					break
+				}
+				dif += 1
+			}
+		}
+	}
+
+	if dif > 0 {
 		sendVersion(knownNodes[0], bc)
 	}
 
