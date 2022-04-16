@@ -2,10 +2,17 @@ package main
 
 import "fmt"
 
-func (cli *CLI) createWallet(nodeID string) {
-	wallets, _ := NewWallets(nodeID)
-	address := wallets.CreateWallet()
-	wallets.SaveToFile(nodeID)
+func (cli *CLI) createWallet() {
+	wallet := NewWallet()
+	address := wallet.GetAddress()
 
-	fmt.Printf("Your new address: %s\n", address)
+	fmt.Printf("Your Bitcoin private key should be kept a secret. Whomever you share the private key with has access to spend all the bitcoins associated with that address.\n Your new address: %s\n Your private key: %s\n", address, EncondePrivKey(wallet.PrivateKey))
+}
+
+func (cli *CLI) AddWallet(priKey []byte) {
+
+	wallet := DecodePrivKey(priKey)
+
+	fmt.Printf("Your addres: %s\n", wallet.GetAddress())
+
 }

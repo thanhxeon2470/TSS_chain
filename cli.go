@@ -43,6 +43,7 @@ func (cli *CLI) Run() {
 	getBalanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
 	createBlockchainCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
 	createWalletCmd := flag.NewFlagSet("createwallet", flag.ExitOnError)
+	addWalletCmd := flag.NewFlagSet("addwallet", flag.ExitOnError)
 	listAddressesCmd := flag.NewFlagSet("listaddresses", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
 	reindexUTXOCmd := flag.NewFlagSet("reindexutxo", flag.ExitOnError)
@@ -70,6 +71,11 @@ func (cli *CLI) Run() {
 		}
 	case "createwallet":
 		err := createWalletCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
+	case "addwallet":
+		err := addWalletCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Panic(err)
 		}
@@ -119,8 +125,12 @@ func (cli *CLI) Run() {
 		cli.createBlockchain(*createBlockchainAddress, nodeID)
 	}
 
+	if addWalletCmd.Parsed() {
+		cli.AddWallet([]byte(os.Args[2]))
+	}
+
 	if createWalletCmd.Parsed() {
-		cli.createWallet(nodeID)
+		cli.createWallet()
 	}
 
 	if listAddressesCmd.Parsed() {
