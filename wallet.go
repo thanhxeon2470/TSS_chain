@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"log"
+	"math/big"
 
 	"golang.org/x/crypto/ripemd160"
 )
@@ -53,6 +54,28 @@ func HashPubKey(pubKey []byte) []byte {
 	publicRIPEMD160 := RIPEMD160Hasher.Sum(nil)
 
 	return publicRIPEMD160
+}
+
+// Private Key econder
+func EncondePrivKey(privKey ecdsa.PrivateKey) []byte {
+	return Base58Encode(privKey.D.Bytes())
+}
+
+// Private Key decoder
+func DecodePrivKey(encoded []byte) *Wallet {
+	// Decode base58
+	bytes := Base58Decode(encoded)
+	// Allocate new Private Key
+	var key ecdsa.PrivateKey
+	key.D = new(big.Int).SetBytes(bytes)
+	// Compute compatiable PublicKey
+	key.PublicKey.Curve = elliptic.P256()
+	key.PublicKey.X, key.PublicKey.Y = key.PublicKey.Curve.ScalarBaseMult(key.D.Bytes())
+
+	pubKey := append(key.PublicKey.X.Bytes(), key.PublicKey.Y.Bytes()...)
+
+	w := Wallet{key, pubKey}
+	return &w
 }
 
 // ValidateAddress check if address if valid
