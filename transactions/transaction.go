@@ -1,4 +1,4 @@
-package main
+package transactions
 
 import (
 	"bytes"
@@ -8,6 +8,9 @@ import (
 	"crypto/sha256"
 	"math/big"
 	"strings"
+
+	"blockchain_go/ftx"
+	"blockchain_go/wallet"
 
 	"encoding/gob"
 	"encoding/hex"
@@ -20,6 +23,7 @@ const subsidy = 10
 // Transaction represents a Bitcoin transaction
 type Transaction struct {
 	ID   []byte
+	Ipfs []TXIpfs
 	Vin  []TXInput
 	Vout []TXOutput
 }
@@ -193,11 +197,11 @@ func NewCoinbaseTX(to, data string) *Transaction {
 }
 
 // NewUTXOTransaction creates a new transaction
-func NewUTXOTransaction(wallet *Wallet, to string, amount int, UTXOSet *UTXOSet) *Transaction {
+func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, FTX *ftx.FTXset, UTXOSet *UTXOSet) *Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
 
-	pubKeyHash := HashPubKey(wallet.PublicKey)
+	pubKeyHash := wallet.HashPubKey(w.PublicKey)
 	acc, validOutputs := UTXOSet.FindSpendableOutputs(pubKeyHash, amount)
 
 	if acc < amount {
@@ -212,21 +216,21 @@ func NewUTXOTransaction(wallet *Wallet, to string, amount int, UTXOSet *UTXOSet)
 		}
 
 		for _, out := range outs {
-			input := TXInput{txID, out, nil, wallet.PublicKey}
+			input := TXInput{txID, out, nil, w.PublicKey}
 			inputs = append(inputs, input)
 		}
 	}
 
 	// Build a list of outputs
-	from := fmt.Sprintf("%s", wallet.GetAddress())
+	from := fmt.Sprintf("%s", w.GetAddress())
 	outputs = append(outputs, *NewTXOutput(amount, to))
 	if acc > amount {
 		outputs = append(outputs, *NewTXOutput(acc-amount, from)) // a change
 	}
 
-	tx := Transaction{nil, inputs, outputs}
+	tx := Transaction{nil, iHash, inputs, outputs}
 	tx.ID = tx.Hash()
-	UTXOSet.Blockchain.SignTransaction(&tx, wallet.PrivateKey)
+	UTXOSet.Blockchain.SignTransaction(&tx, w.PrivateKey)
 
 	return &tx
 }

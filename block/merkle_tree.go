@@ -1,4 +1,4 @@
-package main
+package block
 
 import (
 	"crypto/sha256"

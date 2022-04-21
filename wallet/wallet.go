@@ -1,6 +1,7 @@
-package main
+package wallet
 
 import (
+	"blockchain_go/utils"
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -37,7 +38,7 @@ func (w Wallet) GetAddress() []byte {
 	checksum := checksum(versionedPayload)
 
 	fullPayload := append(versionedPayload, checksum...)
-	address := Base58Encode(fullPayload)
+	address := utils.Base58Encode(fullPayload)
 
 	return address
 }
@@ -58,13 +59,13 @@ func HashPubKey(pubKey []byte) []byte {
 
 // Private Key econder
 func EncondePrivKey(privKey ecdsa.PrivateKey) []byte {
-	return Base58Encode(privKey.D.Bytes())
+	return utils.Base58Encode(privKey.D.Bytes())
 }
 
 // Private Key decoder
 func DecodePrivKey(encoded []byte) *Wallet {
 	// Decode base58
-	bytes := Base58Decode(encoded)
+	bytes := utils.Base58Decode(encoded)
 	// Allocate new Private Key
 	var key ecdsa.PrivateKey
 	key.D = new(big.Int).SetBytes(bytes)
@@ -80,7 +81,7 @@ func DecodePrivKey(encoded []byte) *Wallet {
 
 // ValidateAddress check if address if valid
 func ValidateAddress(address string) bool {
-	pubKeyHash := Base58Decode([]byte(address))
+	pubKeyHash := utils.Base58Decode([]byte(address))
 	actualChecksum := pubKeyHash[len(pubKeyHash)-addressChecksumLen:]
 	version := pubKeyHash[0]
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-addressChecksumLen]

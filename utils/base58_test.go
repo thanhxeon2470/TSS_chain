@@ -1,6 +1,7 @@
-package main
+package utils_test
 
 import (
+	"blockchain_go/utils"
 	"encoding/hex"
 	"log"
 	"strings"
@@ -16,9 +17,9 @@ func TestBase58(t *testing.T) {
 		log.Fatal(err)
 	}
 
-	encoded := Base58Encode(hash)
+	encoded := utils.Base58Encode(hash)
 	assert.Equal(t, "16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM", string(encoded))
 
-	decoded := Base58Decode([]byte("16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"))
+	decoded := utils.Base58Decode([]byte("16UwLL9Risc3QfPqBUvKofHmBQ7wMtjvM"))
 	assert.Equal(t, strings.ToLower("00010966776006953D5567439E5E39F86A0D273BEED61967F6"), hex.EncodeToString(decoded))
 }
