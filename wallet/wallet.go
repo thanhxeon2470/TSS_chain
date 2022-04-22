@@ -23,11 +23,11 @@ type Wallet struct {
 }
 
 // NewWallet creates and returns a Wallet
-func NewWallet() *Wallet {
+func NewWallet() (*Wallet, error) {
 	private, public := newKeyPair()
 	wallet := Wallet{private, public}
 
-	return &wallet
+	return &wallet, nil
 }
 
 // GetAddress returns wallet address
@@ -58,7 +58,7 @@ func HashPubKey(pubKey []byte) []byte {
 }
 
 // Private Key econder
-func EncondePrivKey(privKey ecdsa.PrivateKey) []byte {
+func EncodePrivKey(privKey ecdsa.PrivateKey) []byte {
 	return utils.Base58Encode(privKey.D.Bytes())
 }
 

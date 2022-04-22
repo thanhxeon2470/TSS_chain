@@ -1,4 +1,4 @@
-package transactions
+package blockchain
 
 import (
 	"blockchain_go/utils"

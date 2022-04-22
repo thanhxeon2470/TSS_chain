@@ -1,4 +1,4 @@
-package transactions
+package blockchain
 
 import (
 	"bytes"
@@ -9,7 +9,6 @@ import (
 	"math/big"
 	"strings"
 
-	"blockchain_go/ftx"
 	"blockchain_go/wallet"
 
 	"encoding/gob"
@@ -118,6 +117,7 @@ func (tx Transaction) String() string {
 func (tx *Transaction) TrimmedCopy() Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
+	var ipfsList []TXIpfs
 
 	for _, vin := range tx.Vin {
 		inputs = append(inputs, TXInput{vin.Txid, vin.Vout, nil, nil})
@@ -127,7 +127,10 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 		outputs = append(outputs, TXOutput{vout.Value, vout.PubKeyHash})
 	}
 
-	txCopy := Transaction{tx.ID, inputs, outputs}
+	for _, ipfs := range tx.Ipfs {
+		ipfsList = append(ipfsList, TXIpfs{ipfs.IpfsHash, ipfs.PubKeyHash})
+	}
+	txCopy := Transaction{tx.ID, ipfsList, inputs, outputs}
 
 	return txCopy
 }
@@ -190,16 +193,17 @@ func NewCoinbaseTX(to, data string) *Transaction {
 
 	txin := TXInput{[]byte{}, -1, nil, []byte(data)}
 	txout := NewTXOutput(subsidy, to)
-	tx := Transaction{nil, []TXInput{txin}, []TXOutput{*txout}}
+	tx := Transaction{nil, nil, []TXInput{txin}, []TXOutput{*txout}}
 	tx.ID = tx.Hash()
 
 	return &tx
 }
 
 // NewUTXOTransaction creates a new transaction
-func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, FTX *ftx.FTXset, UTXOSet *UTXOSet) *Transaction {
+func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddress []string, ipfsHash string, FTX *FTXset, UTXOSet *UTXOSet) *Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
+	var ipfsList []TXIpfs
 
 	pubKeyHash := wallet.HashPubKey(w.PublicKey)
 	acc, validOutputs := UTXOSet.FindSpendableOutputs(pubKeyHash, amount)
@@ -225,10 +229,17 @@ func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, FTX *ftx.FTXset
 	from := fmt.Sprintf("%s", w.GetAddress())
 	outputs = append(outputs, *NewTXOutput(amount, to))
 	if acc > amount {
-		outputs = append(outputs, *NewTXOutput(acc-amount, from)) // a change
+		outputs = append(outputs, *NewTXOutput(acc-amount, from)) // a change tieenf thoois
 	}
 
-	tx := Transaction{nil, iHash, inputs, outputs}
+	// Build a list of ipfs
+	for _, addr := range allowaddress {
+		if wallet.ValidateAddress(addr) {
+			ipfsList = append(ipfsList, *NewTXIpfs(ipfsHash, addr))
+		}
+	}
+
+	tx := Transaction{nil, ipfsList, inputs, outputs}
 	tx.ID = tx.Hash()
 	UTXOSet.Blockchain.SignTransaction(&tx, w.PrivateKey)
 

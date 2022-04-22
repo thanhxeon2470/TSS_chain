@@ -1,7 +1,7 @@
-package transactions
+package blockchain
 
 import (
-	"blockchain_go/blockchain"
+	// "blockchain_go/blockchain"
 	"log"
 
 	"github.com/boltdb/bolt"
@@ -11,7 +11,7 @@ const ftxBucket = "filealive"
 
 // FTX is File transaction
 type FTXset struct {
-	Blockchain *blockchain.Blockchain
+	Blockchain *Blockchain
 }
 
 func (f FTXset) FindFTX(pubKeyHash []byte) []string {
@@ -22,7 +22,7 @@ func (f FTXset) FindFTX(pubKeyHash []byte) []string {
 		c := b.Cursor()
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
-			out := transactions.DeserializeOutputsIPFS(v)
+			out := DeserializeIPFS(v)
 			if out.IsLockedWithKey(pubKeyHash) {
 				listFTX = append(listFTX, string(out.IpfsHash))
 			}
