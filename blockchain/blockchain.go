@@ -197,6 +197,47 @@ func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
 	return UTXO
 }
 
+// FindUTXO finds all unspent transaction outputs and returns transactions with spent outputs removed
+func (bc *Blockchain) FindFTX() map[string]TXIpfsList {
+	FTX := make(map[string]TXIpfsList)
+	bci := bc.Iterator()
+
+	for {
+		block := bci.Next()
+
+		for _, tx := range block.Transactions {
+			txID := hex.EncodeToString(tx.ID)
+
+			// ipfsList:
+			for _, ipfs := range tx.Ipfs {
+				// Was the output spent?
+				// for _, spentOutIdx := range spentTXOs[txID] {
+				// 	if spentOutIdx == i {
+				// 		// continue ipfsList
+				// 	}
+				// }
+
+				ipfsList := FTX[txID]
+				ipfsList.TXIpfsList = append(ipfsList.TXIpfsList, ipfs)
+				FTX[txID] = ipfsList
+			}
+
+			// if tx.IsCoinbase() == false {
+			// 	for _, in := range tx.Vin {
+			// 		inTxID := hex.EncodeToString(in.Txid)
+			// 		spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Vout)
+			// 	}
+			// }
+		}
+
+		if len(block.PrevBlockHash) == 0 {
+			break
+		}
+	}
+
+	return FTX
+}
+
 // Iterator returns a BlockchainIterat
 func (bc *Blockchain) Iterator() *BlockchainIterator {
 	bci := &BlockchainIterator{bc.tip, bc.db}

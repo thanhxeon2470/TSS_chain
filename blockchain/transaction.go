@@ -200,7 +200,7 @@ func NewCoinbaseTX(to, data string) *Transaction {
 }
 
 // NewUTXOTransaction creates a new transaction
-func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddress []string, ipfsHash string, FTX *FTXset, UTXOSet *UTXOSet) *Transaction {
+func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddress []string, ipfsHash string, UTXOSet *UTXOSet) *Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
 	var ipfsList []TXIpfs

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"strings"
 
 	"os"
 )
@@ -55,6 +56,8 @@ func (cli *CLI) Run() {
 	sendFrom := sendCmd.String("from", "", "Source wallet address")
 	sendTo := sendCmd.String("to", "", "Destination wallet address")
 	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
+	sendAllow := sendCmd.String("allowuser", "", "These user can access to this file")
+	sendIPFShash := sendCmd.String("ipfshash", "", "Hash file of IPFS")
 	sendMine := sendCmd.Bool("mine", false, "Mine immediately on the same node")
 	startNodeMiner := startNodeCmd.String("miner", "", "Enable mining mode and send reward to ADDRESS")
 
@@ -133,9 +136,9 @@ func (cli *CLI) Run() {
 		cli.createWallet()
 	}
 
-	if listAddressesCmd.Parsed() {
-		cli.listAddresses(nodeID)
-	}
+	// if listAddressesCmd.Parsed() {
+	// 	cli.listAddresses(nodeID)
+	// }
 
 	if printChainCmd.Parsed() {
 		cli.printChain(nodeID)
@@ -150,8 +153,8 @@ func (cli *CLI) Run() {
 			sendCmd.Usage()
 			os.Exit(1)
 		}
-
-		cli.send(*sendFrom, *sendTo, *sendAmount, nodeID, *sendMine)
+		alwuser := strings.Split(*sendAllow, "_")
+		cli.send(*sendFrom, *sendTo, *sendAmount, alwuser, *sendIPFShash, *sendMine)
 	}
 
 	if startNodeCmd.Parsed() {

@@ -33,8 +33,12 @@ func NewTXIpfs(ipfsHash string, address string) *TXIpfs {
 	return txi
 }
 
+type TXIpfsList struct {
+	TXIpfsList []TXIpfs
+}
+
 // Serialize serializes link the file of IPFS
-func (t TXIpfs) SerializeIPFS() []byte {
+func (t TXIpfsList) SerializeIPFS() []byte {
 	var buff bytes.Buffer
 
 	enc := gob.NewEncoder(&buff)
@@ -47,14 +51,14 @@ func (t TXIpfs) SerializeIPFS() []byte {
 }
 
 // DeserializeOutputs deserializes link the file of IPFS
-func DeserializeIPFS(data []byte) TXIpfs {
-	var outputs TXIpfs
+func DeserializeIPFS(data []byte) TXIpfsList {
+	var res TXIpfsList
 
 	dec := gob.NewDecoder(bytes.NewReader(data))
-	err := dec.Decode(&outputs)
+	err := dec.Decode(&res)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	return outputs
+	return res
 }

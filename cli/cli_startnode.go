@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"blockchain_go/server"
 	"blockchain_go/wallet"
 	"fmt"
 	"log"
@@ -16,5 +15,5 @@ func (cli *CLI) startNode(nodeID, minerAddress string) {
 			log.Panic("Wrong miner address!")
 		}
 	}
-	server.StartServer(nodeID, minerAddress)
+	StartServer(nodeID, minerAddress)
 }
