@@ -17,7 +17,7 @@ type FTXset struct {
 
 func (f FTXset) FindFTX(pubKeyHash []byte) []string {
 	var listFTX []string
-	db := f.Blockchain.db
+	db := f.Blockchain.DB
 	err := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ftxBucket))
 		c := b.Cursor()
@@ -44,7 +44,7 @@ func (f FTXset) FindFTX(pubKeyHash []byte) []string {
 }
 
 func (f FTXset) ReindexFTX() {
-	db := f.Blockchain.db
+	db := f.Blockchain.DB
 	bucketName := []byte(ftxBucket)
 
 	// Renew bucket
@@ -89,7 +89,7 @@ func (f FTXset) ReindexFTX() {
 // Update updates the UTXO set with transactions from the Block
 // The Block is considered to be the tip of a blockchain
 func (f FTXset) UpdateFTX(block *Block) {
-	db := f.Blockchain.db
+	db := f.Blockchain.DB
 
 	err := db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ftxBucket))

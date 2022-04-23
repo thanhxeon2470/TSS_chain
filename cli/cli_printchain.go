@@ -8,7 +8,7 @@ import (
 
 func (cli *CLI) printChain(nodeID string) {
 	bc := blockchain.NewBlockchain(nodeID)
-	defer bc.db.Close()
+	defer bc.DB.Close()
 
 	bci := bc.Iterator()
 
