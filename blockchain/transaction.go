@@ -109,6 +109,12 @@ func (tx Transaction) String() string {
 		lines = append(lines, fmt.Sprintf("       Value:  %d", output.Value))
 		lines = append(lines, fmt.Sprintf("       Script: %x", output.PubKeyHash))
 	}
+	if len(tx.Ipfs) > 0 {
+		lines = append(lines, fmt.Sprintf("     IPFS: %s", tx.Ipfs[0].IpfsHash))
+		for i, allowuser := range tx.Ipfs {
+			lines = append(lines, fmt.Sprintf("       User %d:  %x", i, allowuser.PubKeyHash))
+		}
+	}
 
 	return strings.Join(lines, "\n")
 }
