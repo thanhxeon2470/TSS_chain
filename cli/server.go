@@ -142,8 +142,8 @@ func sendInv(address, kind string, items [][]byte) {
 }
 
 func sendGetBlocks(address string) {
-	payload := gobEncode(getblocks{nodeAddress})
-	request := append(commandToBytes("getblocks"), payload...)
+	// payload := gobEncode(getblocks{nodeAddress})
+	request := commandToBytes("getblocks")
 
 	sendData(address, request)
 }
@@ -257,15 +257,15 @@ func handleInv(request []byte, bc *blockchain.Blockchain, addrFrom string) {
 }
 
 func handleGetBlocks(request []byte, bc *blockchain.Blockchain, addrFrom string) {
-	var buff bytes.Buffer
-	var payload getblocks
+	// var buff bytes.Buffer
+	// var payload getblocks
 
-	buff.Write(request[commandLength:])
-	dec := gob.NewDecoder(&buff)
-	err := dec.Decode(&payload)
-	if err != nil {
-		log.Panic(err)
-	}
+	// buff.Write(request[commandLength:])
+	// dec := gob.NewDecoder(&buff)
+	// err := dec.Decode(&payload)
+	// if err != nil {
+	// 	log.Panic(err)
+	// }
 
 	blocks := bc.GetBlockHashes()
 	sendInv(addrFrom, "block", blocks)
