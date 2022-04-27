@@ -6,8 +6,8 @@ import (
 	"log"
 )
 
-func (cli *CLI) startNode(nodeID, minerAddress string) {
-	fmt.Printf("Starting node %s\n", nodeID)
+func (cli *CLI) StartNode(minerAddress string) {
+	fmt.Printf("Starting node\n")
 	if len(minerAddress) > 0 {
 		if wallet.ValidateAddress(minerAddress) {
 			fmt.Println("Mining is on. Address to receive rewards: ", minerAddress)
@@ -15,5 +15,5 @@ func (cli *CLI) startNode(nodeID, minerAddress string) {
 			log.Panic("Wrong miner address!")
 		}
 	}
-	StartServer(nodeID, minerAddress)
+	StartServer(minerAddress)
 }

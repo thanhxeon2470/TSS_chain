@@ -233,6 +233,8 @@ func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddress []
 	}
 
 	// Build a list of ipfs
+
+	ipfsList = append(ipfsList, *NewTXIpfs(ipfsHash, string(w.GetAddress())))
 	for _, addr := range allowaddress {
 		if wallet.ValidateAddress(addr) {
 			ipfsList = append(ipfsList, *NewTXIpfs(ipfsHash, addr))

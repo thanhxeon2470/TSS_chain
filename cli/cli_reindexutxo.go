@@ -5,8 +5,8 @@ import (
 	"fmt"
 )
 
-func (cli *CLI) reindexUTXO(nodeID string) {
-	bc := blockchain.NewBlockchain(nodeID)
+func (cli *CLI) ReindexUTXO() {
+	bc := blockchain.NewBlockchain()
 	UTXOSet := blockchain.UTXOSet{bc}
 	UTXOSet.Reindex()
 	FTXSet := blockchain.FTXset{bc}

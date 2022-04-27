@@ -7,7 +7,7 @@ import (
 	"log"
 )
 
-func (cli *CLI) send(prkFrom, to string, amount int, allowuser []string, iHash string, mineNow bool) {
+func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash string, mineNow bool) {
 	// if !wallet.ValidateAddress(prkFrom) {
 	// 	log.Panic("ERROR: Sender address is not valid")
 	// }
@@ -15,7 +15,7 @@ func (cli *CLI) send(prkFrom, to string, amount int, allowuser []string, iHash s
 		log.Panic("ERROR: Recipient address is not valid")
 	}
 
-	bc := blockchain.NewBlockchain("3000")
+	bc := blockchain.NewBlockchain()
 	UTXOSet := blockchain.UTXOSet{bc}
 	FTX := blockchain.FTXset{bc}
 	defer bc.DB.Close()

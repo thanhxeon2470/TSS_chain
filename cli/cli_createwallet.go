@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func (cli *CLI) createWallet() {
+func (cli *CLI) CreateWallet() {
 	w, _ := wallet.NewWallet()
 	address := w.GetAddress()
 

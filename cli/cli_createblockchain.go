@@ -7,11 +7,11 @@ import (
 	"log"
 )
 
-func (cli *CLI) createBlockchain(address, nodeID string) {
+func (cli *CLI) CreateBlockchain(address string) {
 	if !wallet.ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")
 	}
-	bc := blockchain.CreateBlockchain(address, nodeID)
+	bc := blockchain.CreateBlockchain(address)
 	defer bc.DB.Close()
 
 	UTXOSet := blockchain.UTXOSet{bc}
