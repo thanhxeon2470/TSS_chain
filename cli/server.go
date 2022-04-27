@@ -142,8 +142,8 @@ func sendInv(address, kind string, items [][]byte) {
 }
 
 func sendGetBlocks(address string) {
-	// payload := gobEncode(getblocks{nodeAddress})
-	request := commandToBytes("getblocks")
+	payload := gobEncode(getblocks{nodeAddress})
+	request := append(commandToBytes("getblocks"), payload...)
 
 	sendData(address, request)
 }
