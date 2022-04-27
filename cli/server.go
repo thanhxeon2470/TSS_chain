@@ -34,9 +34,9 @@ type block struct {
 	Block []byte
 }
 
-type getblocks struct {
-	AddrFrom string
-}
+// type getblocks struct {
+// 	AddrFrom string
+// }
 
 type getdata struct {
 	// AddrFrom string
