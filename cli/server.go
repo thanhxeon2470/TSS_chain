@@ -381,14 +381,12 @@ func handleVersion(request []byte, bc *blockchain.Blockchain, addrFrom string) {
 	myBestHeight := bc.GetBestHeight()
 	foreignerBestHeight := payload.BestHeight
 
-	// fmt.Printf("handle version %s %s", payload.AddrFrom, addrFrom)
-
 	if myBestHeight < foreignerBestHeight {
 		sendGetBlocks(addrFrom)
 	} else if myBestHeight > foreignerBestHeight {
 		sendVersion(addrFrom, bc)
 	}
-	// sendAddr(payload.AddrFrom)
+	sendAddr(addrFrom)
 	if !nodeIsKnown(addrFrom) {
 		knownNodes = append(knownNodes, addrFrom)
 	}
