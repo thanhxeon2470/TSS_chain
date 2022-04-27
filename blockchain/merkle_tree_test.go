@@ -3,8 +3,9 @@ package blockchain_test
 import (
 	"encoding/hex"
 	"fmt"
-	"testchain/blockchain"
 	"testing"
+
+	"github.com/thanhxeon2470/testchain/blockchain"
 
 	"github.com/stretchr/testify/assert"
 )

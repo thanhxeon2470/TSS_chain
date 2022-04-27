@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"math"
 	"math/big"
-	"testchain/utils"
+
+	"github.com/thanhxeon2470/testchain/utils"
 )
 
 var (

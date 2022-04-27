@@ -11,7 +11,8 @@ import (
 	"net"
 	"os"
 	"strings"
-	"testchain/blockchain"
+
+	"github.com/thanhxeon2470/testchain/blockchain"
 )
 
 const protocol = "tcp"

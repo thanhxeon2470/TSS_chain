@@ -2,7 +2,8 @@ package blockchain
 
 import (
 	"bytes"
-	"testchain/wallet"
+
+	"github.com/thanhxeon2470/testchain/wallet"
 )
 
 // TXInput represents a transaction input

@@ -1,4 +1,4 @@
-module testchain
+module github.com/thanhxeon2470/github.com/thanhxeon2470/testchain
 
 go 1.17
 

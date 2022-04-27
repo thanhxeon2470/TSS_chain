@@ -2,7 +2,8 @@ package cli
 
 import (
 	"fmt"
-	"testchain/wallet"
+
+	"github.com/thanhxeon2470/testchain/wallet"
 )
 
 func (cli *CLI) CreateWallet() {

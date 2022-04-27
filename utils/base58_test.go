@@ -4,8 +4,9 @@ import (
 	"encoding/hex"
 	"log"
 	"strings"
-	"testchain/utils"
 	"testing"
+
+	"github.com/thanhxeon2470/testchain/utils"
 
 	"github.com/stretchr/testify/assert"
 )

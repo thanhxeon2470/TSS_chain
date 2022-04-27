@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"strings"
 
-	"testchain/wallet"
+	"github.com/thanhxeon2470/testchain/wallet"
 
 	"encoding/gob"
 	"encoding/hex"

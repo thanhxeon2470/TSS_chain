@@ -3,7 +3,8 @@ package cli
 import (
 	"fmt"
 	"log"
-	"testchain/wallet"
+
+	"github.com/thanhxeon2470/testchain/wallet"
 )
 
 func (cli *CLI) StartNode(minerAddress string) {

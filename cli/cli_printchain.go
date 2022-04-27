@@ -3,7 +3,8 @@ package cli
 import (
 	"fmt"
 	"strconv"
-	"testchain/blockchain"
+
+	"github.com/thanhxeon2470/testchain/blockchain"
 )
 
 func (cli *CLI) PrintChain() {

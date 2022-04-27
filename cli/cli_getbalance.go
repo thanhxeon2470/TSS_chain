@@ -3,9 +3,10 @@ package cli
 import (
 	"fmt"
 	"log"
-	"testchain/blockchain"
-	"testchain/utils"
-	"testchain/wallet"
+
+	"github.com/thanhxeon2470/testchain/blockchain"
+	"github.com/thanhxeon2470/testchain/utils"
+	"github.com/thanhxeon2470/testchain/wallet"
 )
 
 func (cli *CLI) GetBalance(address string) {

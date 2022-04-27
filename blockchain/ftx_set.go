@@ -1,7 +1,7 @@
 package blockchain
 
 import (
-	// "testchain/blockchain"
+	// "github.com/thanhxeon2470/testchain/blockchain"
 	"encoding/hex"
 	"log"
 
