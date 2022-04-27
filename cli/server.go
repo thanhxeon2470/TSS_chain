@@ -21,7 +21,7 @@ const commandLength = 12
 
 var nodeAddress string
 var miningAddress string
-var knownNodes = []string{os.Getenv("KNOWNNODE")}
+var knownNodes = []string{}
 var blocksInTransit = [][]byte{}
 var mempool = make(map[string]blockchain.Transaction)
 
@@ -401,8 +401,8 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 	}
 	command := bytesToCommand(request[:commandLength])
 	fmt.Printf("Received %s command\n", command)
-	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("KNOWNNODE"))
-	addrLocal := fmt.Sprintf("%s:%s", strings.Split(conn.LocalAddr().String(), ":")[0], os.Getenv("KNOWNNODE"))
+	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("PORT"))
+	addrLocal := fmt.Sprintf("%s:%s", strings.Split(conn.LocalAddr().String(), ":")[0], os.Getenv("PORT"))
 	fmt.Printf("O lay looi nhieu vl\n %s %s \n==========", addrFrom, addrLocal)
 	switch command {
 	case "addr":
@@ -428,8 +428,9 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 
 // StartServer starts a node
 func StartServer(minerAddress string) {
+	knownNodes = append(knownNodes, os.Getenv("KNOWNNODE"))
 	miningAddress = minerAddress
-	port := fmt.Sprintf(":%s", os.Getenv("KNOWNNODE"))
+	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	ln, err := net.Listen(protocol, port)
 	if err != nil {
 		log.Panic(err)
@@ -448,8 +449,9 @@ func StartServer(minerAddress string) {
 	for _, a := range addrs {
 		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ipnet.IP.To4() != nil {
-				nodeAddress = fmt.Sprintf("%s:%s", ipnet.IP.String(), os.Getenv("KNOWNNODE"))
+				nodeAddress = fmt.Sprintf("%s:%s", ipnet.IP.String(), os.Getenv("PORT"))
 				dif += 1
+
 				if nodeAddress == knownNodes[0] {
 					// sendVersion(knownNodes[0], bc)
 					break
