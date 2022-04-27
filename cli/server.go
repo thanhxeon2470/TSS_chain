@@ -87,9 +87,9 @@ func extractCommand(request []byte) []byte {
 	return request[:commandLength]
 }
 
-func requestBlocks() {
+func requestBlocks(bc *blockchain.Blockchain) {
 	for _, node := range knownNodes {
-		sendGetBlocks(node)
+		sendVersion(node, bc)
 	}
 }
 
@@ -171,7 +171,7 @@ func sendVersion(addr string, bc *blockchain.Blockchain) {
 	sendData(addr, request)
 }
 
-func handleAddr(request []byte) {
+func handleAddr(request []byte, bc *blockchain.Blockchain) {
 	var buff bytes.Buffer
 	var payload addr
 
@@ -184,7 +184,7 @@ func handleAddr(request []byte) {
 
 	knownNodes = append(knownNodes, payload.AddrList...)
 	fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
-	requestBlocks()
+	requestBlocks(bc)
 }
 
 func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom string) {
@@ -377,10 +377,10 @@ func handleVersion(request []byte, bc *blockchain.Blockchain, addrFrom string) {
 	if err != nil {
 		log.Panic(err)
 	}
-
 	myBestHeight := bc.GetBestHeight()
 	foreignerBestHeight := payload.BestHeight
 
+	fmt.Println("myBestHeight ", myBestHeight)
 	if myBestHeight < foreignerBestHeight {
 		sendGetBlocks(addrFrom)
 	} else if myBestHeight > foreignerBestHeight {
@@ -403,7 +403,7 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 	addrLocal := fmt.Sprintf("%s:%s", strings.Split(conn.LocalAddr().String(), ":")[0], os.Getenv("PORT"))
 	switch command {
 	case "addr":
-		handleAddr(request)
+		handleAddr(request, bc)
 	case "block":
 		handleBlock(request, bc, addrFrom)
 	case "inv":
