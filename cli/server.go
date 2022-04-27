@@ -403,7 +403,6 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 	fmt.Printf("Received %s command\n", command)
 	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("PORT"))
 	addrLocal := fmt.Sprintf("%s:%s", strings.Split(conn.LocalAddr().String(), ":")[0], os.Getenv("PORT"))
-	fmt.Printf("O lay looi nhieu vl\n %s %s \n==========", addrFrom, addrLocal)
 	switch command {
 	case "addr":
 		handleAddr(request)
