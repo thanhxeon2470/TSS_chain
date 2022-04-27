@@ -1,8 +1,8 @@
 package blockchain
 
 import (
-	"blockchain_go/wallet"
 	"bytes"
+	"testchain/wallet"
 )
 
 // TXInput represents a transaction input

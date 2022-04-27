@@ -1,12 +1,12 @@
 package blockchain
 
 import (
-	"blockchain_go/utils"
 	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"math"
 	"math/big"
+	"testchain/utils"
 )
 
 var (

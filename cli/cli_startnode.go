@@ -1,9 +1,9 @@
 package cli
 
 import (
-	"blockchain_go/wallet"
 	"fmt"
 	"log"
+	"testchain/wallet"
 )
 
 func (cli *CLI) StartNode(minerAddress string) {

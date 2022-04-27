@@ -1,7 +1,7 @@
 package main
 
 import (
-	"blockchain_go/cli"
+	"testchain/cli"
 
 	"github.com/joho/godotenv"
 )

@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"blockchain_go/wallet"
 	"fmt"
+	"testchain/wallet"
 )
 
 func (cli *CLI) CreateWallet() {

@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"blockchain_go/utils"
 	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -9,6 +8,7 @@ import (
 	"crypto/sha256"
 	"log"
 	"math/big"
+	"testchain/utils"
 
 	"golang.org/x/crypto/ripemd160"
 )

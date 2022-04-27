@@ -1,10 +1,10 @@
 package cli
 
 import (
-	"blockchain_go/blockchain"
-	"blockchain_go/wallet"
 	"fmt"
 	"log"
+	"testchain/blockchain"
+	"testchain/wallet"
 )
 
 func (cli *CLI) CreateBlockchain(address string) {

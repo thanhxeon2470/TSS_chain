@@ -1,10 +1,10 @@
 package cli
 
 import (
-	"blockchain_go/blockchain"
-	"blockchain_go/wallet"
 	"fmt"
 	"log"
+	"testchain/blockchain"
+	"testchain/wallet"
 )
 
 func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash string, mineNow bool) {

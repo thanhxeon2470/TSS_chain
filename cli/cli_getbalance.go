@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"blockchain_go/blockchain"
-	"blockchain_go/utils"
-	"blockchain_go/wallet"
 	"fmt"
 	"log"
+	"testchain/blockchain"
+	"testchain/utils"
+	"testchain/wallet"
 )
 
 func (cli *CLI) GetBalance(address string) {

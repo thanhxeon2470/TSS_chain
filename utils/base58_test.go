@@ -1,10 +1,10 @@
 package utils_test
 
 import (
-	"blockchain_go/utils"
 	"encoding/hex"
 	"log"
 	"strings"
+	"testchain/utils"
 	"testing"
 
 	"github.com/stretchr/testify/assert"

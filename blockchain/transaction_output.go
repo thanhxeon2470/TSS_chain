@@ -1,10 +1,10 @@
 package blockchain
 
 import (
-	"blockchain_go/utils"
 	"bytes"
 	"encoding/gob"
 	"log"
+	"testchain/utils"
 )
 
 // TXOutput represents a transaction output

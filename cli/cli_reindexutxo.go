@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"blockchain_go/blockchain"
 	"fmt"
+	"testchain/blockchain"
 )
 
 func (cli *CLI) ReindexUTXO() {

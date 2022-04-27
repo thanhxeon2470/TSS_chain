@@ -1,9 +1,9 @@
 package cli
 
 import (
-	"blockchain_go/blockchain"
 	"fmt"
 	"strconv"
+	"testchain/blockchain"
 )
 
 func (cli *CLI) PrintChain() {

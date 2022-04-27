@@ -1,7 +1,7 @@
 package blockchain
 
 import (
-	// "blockchain_go/blockchain"
+	// "testchain/blockchain"
 	"encoding/hex"
 	"log"
 

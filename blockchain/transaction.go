@@ -9,7 +9,7 @@ import (
 	"math/big"
 	"strings"
 
-	"blockchain_go/wallet"
+	"testchain/wallet"
 
 	"encoding/gob"
 	"encoding/hex"

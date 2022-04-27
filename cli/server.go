@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"blockchain_go/blockchain"
 	"bytes"
 	"encoding/gob"
 	"encoding/hex"
@@ -12,6 +11,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"testchain/blockchain"
 )
 
 const protocol = "tcp"
