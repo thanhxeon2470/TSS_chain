@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/thanhxeon2470/testchain/blockchain"
 	"github.com/thanhxeon2470/testchain/wallet"
@@ -36,7 +37,7 @@ func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash s
 		UTXOSet.Update(newBlock)
 		FTX.UpdateFTX(newBlock)
 	} else {
-		sendTx(knownNodes[0], tx)
+		sendTx(os.Getenv("KNOWNNODE"), tx)
 	}
 
 	fmt.Println("Success!")
