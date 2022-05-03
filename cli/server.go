@@ -87,20 +87,20 @@ func extractCommand(request []byte) []byte {
 	return request[:commandLength]
 }
 
-func requestBlocks(bc *blockchain.Blockchain) {
-	for _, node := range knownNodes {
-		sendVersion(node, bc)
-	}
-}
+// func requestBlocks(bc *blockchain.Blockchain) {
+// 	for _, node := range knownNodes {
+// 		sendVersion(node, bc)
+// 	}
+// }
 
-func sendAddr(address string) {
-	nodes := addr{knownNodes}
-	nodes.AddrList = append(nodes.AddrList)
-	payload := gobEncode(nodes)
-	request := append(commandToBytes("addr"), payload...)
+// func sendAddr(address string) {
+// 	nodes := addr{knownNodes}
+// 	nodes.AddrList = append(nodes.AddrList)
+// 	payload := gobEncode(nodes)
+// 	request := append(commandToBytes("addr"), payload...)
 
-	sendData(address, request)
-}
+// 	sendData(address, request)
+// }
 
 func sendBlock(addr string, b *blockchain.Block) {
 	data := block{b.Serialize()}
@@ -171,23 +171,22 @@ func sendVersion(addr string, bc *blockchain.Blockchain) {
 	sendData(addr, request)
 }
 
-func handleAddr(request []byte, bc *blockchain.Blockchain) {
-	var buff bytes.Buffer
-	var payload addr
+// func handleAddr(request []byte, bc *blockchain.Blockchain) {
+// 	var buff bytes.Buffer
+// 	var payload addr
 
-	buff.Write(request[commandLength:])
-	dec := gob.NewDecoder(&buff)
-	err := dec.Decode(&payload)
-	if err != nil {
-		log.Panic(err)
-	}
+// 	buff.Write(request[commandLength:])
+// 	dec := gob.NewDecoder(&buff)
+// 	err := dec.Decode(&payload)
+// 	if err != nil {
+// 		log.Panic(err)
+// 	}
 
-	knownNodes = append(knownNodes, payload.AddrList...)
-	fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
-	requestBlocks(bc)
-}
+// 	knownNodes = append(knownNodes, payload.AddrList...)
+// 	fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
+// }
 
-func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom string) {
+func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom, localAddr string) {
 	var buff bytes.Buffer
 	var payload block
 
@@ -206,6 +205,15 @@ func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom string) {
 
 	fmt.Printf("Added block %x\n", block.Hash)
 
+	if localAddr == knownNodes[0] {
+		for _, node := range knownNodes {
+			if node != localAddr && node != addrFrom {
+				sendBlock(node, block)
+				fmt.Printf("This block is broadcasted to %s\n", node)
+			}
+		}
+	}
+
 	if len(blocksInTransit) > 0 {
 		blockHash := blocksInTransit[0]
 		sendGetData(addrFrom, "block", blockHash)
@@ -216,6 +224,7 @@ func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom string) {
 		FTXSet := blockchain.FTXset{bc}
 		UTXOSet.Reindex()
 		FTXSet.ReindexFTX()
+
 	}
 }
 
@@ -238,6 +247,7 @@ func handleInv(request []byte, bc *blockchain.Blockchain, addrFrom string) {
 		blockHash := payload.Items[0]
 		sendGetData(addrFrom, "block", blockHash)
 
+		//doan nay vo dung
 		newInTransit := [][]byte{}
 		for _, b := range blocksInTransit {
 			if bytes.Compare(b, blockHash) != 0 {
@@ -257,16 +267,6 @@ func handleInv(request []byte, bc *blockchain.Blockchain, addrFrom string) {
 }
 
 func handleGetBlocks(request []byte, bc *blockchain.Blockchain, addrFrom string) {
-	// var buff bytes.Buffer
-	// var payload getblocks
-
-	// buff.Write(request[commandLength:])
-	// dec := gob.NewDecoder(&buff)
-	// err := dec.Decode(&payload)
-	// if err != nil {
-	// 	log.Panic(err)
-	// }
-
 	blocks := bc.GetBlockHashes()
 	sendInv(addrFrom, "block", blocks)
 }
@@ -386,9 +386,10 @@ func handleVersion(request []byte, bc *blockchain.Blockchain, addrFrom string) {
 	} else if myBestHeight > foreignerBestHeight {
 		sendVersion(addrFrom, bc)
 	}
-	sendAddr(addrFrom)
+	// sendAddr(addrFrom)
 	if !nodeIsKnown(addrFrom) {
 		knownNodes = append(knownNodes, addrFrom)
+		fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
 	}
 }
 
@@ -402,10 +403,10 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("PORT"))
 	addrLocal := fmt.Sprintf("%s:%s", strings.Split(conn.LocalAddr().String(), ":")[0], os.Getenv("PORT"))
 	switch command {
-	case "addr":
-		handleAddr(request, bc)
+	// case "addr":
+	// 	handleAddr(request, bc)
 	case "block":
-		handleBlock(request, bc, addrFrom)
+		handleBlock(request, bc, addrFrom, addrLocal)
 	case "inv":
 		handleInv(request, bc, addrFrom)
 	case "getblocks":
