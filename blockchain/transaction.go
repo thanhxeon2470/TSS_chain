@@ -22,7 +22,6 @@ const subsidy = 10
 // Transaction represents a Bitcoin transaction
 type Transaction struct {
 	ID   []byte
-	Ipfs []TXIpfs
 	Vin  []TXInput
 	Vout []TXOutput
 }
@@ -109,12 +108,6 @@ func (tx Transaction) String() string {
 		lines = append(lines, fmt.Sprintf("       Value:  %d", output.Value))
 		lines = append(lines, fmt.Sprintf("       Script: %x", output.PubKeyHash))
 	}
-	if len(tx.Ipfs) > 0 {
-		lines = append(lines, fmt.Sprintf("     IPFS: %s", tx.Ipfs[0].IpfsHash))
-		for i, allowuser := range tx.Ipfs {
-			lines = append(lines, fmt.Sprintf("       User %d:  %x", i, allowuser.PubKeyHash))
-		}
-	}
 
 	return strings.Join(lines, "\n")
 }
@@ -123,7 +116,6 @@ func (tx Transaction) String() string {
 func (tx *Transaction) TrimmedCopy() Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
-	var ipfsList []TXIpfs
 
 	for _, vin := range tx.Vin {
 		inputs = append(inputs, TXInput{vin.Txid, vin.Vout, nil, nil})
@@ -133,10 +125,7 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 		outputs = append(outputs, TXOutput{vout.Value, vout.PubKeyHash})
 	}
 
-	for _, ipfs := range tx.Ipfs {
-		ipfsList = append(ipfsList, TXIpfs{ipfs.IpfsHash, ipfs.PubKeyHash})
-	}
-	txCopy := Transaction{tx.ID, ipfsList, inputs, outputs}
+	txCopy := Transaction{tx.ID, inputs, outputs}
 
 	return txCopy
 }
@@ -199,17 +188,16 @@ func NewCoinbaseTX(to, data string) *Transaction {
 
 	txin := TXInput{[]byte{}, -1, nil, []byte(data)}
 	txout := NewTXOutput(subsidy, to)
-	tx := Transaction{nil, nil, []TXInput{txin}, []TXOutput{*txout}}
+	tx := Transaction{nil, []TXInput{txin}, []TXOutput{*txout}}
 	tx.ID = tx.Hash()
 
 	return &tx
 }
 
 // NewUTXOTransaction creates a new transaction
-func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddress []string, ipfsHash string, UTXOSet *UTXOSet) *Transaction {
+func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, UTXOSet *UTXOSet) *Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
-	var ipfsList []TXIpfs
 
 	pubKeyHash := wallet.HashPubKey(w.PublicKey)
 	acc, validOutputs := UTXOSet.FindSpendableOutputs(pubKeyHash, amount)
@@ -238,16 +226,7 @@ func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddress []
 		outputs = append(outputs, *NewTXOutput(acc-amount, from)) // a change tieenf thoois
 	}
 
-	// Build a list of ipfs
-
-	ipfsList = append(ipfsList, *NewTXIpfs(ipfsHash, string(w.GetAddress())))
-	for _, addr := range allowaddress {
-		if wallet.ValidateAddress(addr) {
-			ipfsList = append(ipfsList, *NewTXIpfs(ipfsHash, addr))
-		}
-	}
-
-	tx := Transaction{nil, ipfsList, inputs, outputs}
+	tx := Transaction{nil, inputs, outputs}
 	tx.ID = tx.Hash()
 	UTXOSet.Blockchain.SignTransaction(&tx, w.PrivateKey)
 

@@ -9,7 +9,7 @@ import (
 	"github.com/thanhxeon2470/testchain/wallet"
 )
 
-func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash string, mineNow bool) {
+func (cli *CLI) Send(prkFrom, to string, amount int, mineNow bool) {
 	// if !wallet.ValidateAddress(prkFrom) {
 	// 	log.Panic("ERROR: Sender address is not valid")
 	// }
@@ -19,7 +19,6 @@ func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash s
 
 	bc := blockchain.NewBlockchain()
 	UTXOSet := blockchain.UTXOSet{bc}
-	FTX := blockchain.FTXset{bc}
 	defer bc.DB.Close()
 
 	// wallets, err :=
@@ -27,7 +26,7 @@ func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash s
 	// 	log.Panic(err)
 	// }
 	w := wallet.DecodePrivKey([]byte(prkFrom))
-	tx := blockchain.NewUTXOTransaction(w, to, amount, allowuser, iHash, &UTXOSet)
+	tx := blockchain.NewUTXOTransaction(w, to, amount, &UTXOSet)
 
 	if mineNow {
 		cbTx := blockchain.NewCoinbaseTX(string(w.GetAddress()), "")
@@ -35,7 +34,6 @@ func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash s
 
 		newBlock := bc.MineBlock(txs)
 		UTXOSet.Update(newBlock)
-		FTX.UpdateFTX(newBlock)
 	} else {
 		sendTx(os.Getenv("KNOWNNODE"), tx)
 	}

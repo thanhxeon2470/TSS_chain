@@ -221,9 +221,7 @@ func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom, localAddr 
 		blocksInTransit = blocksInTransit[1:]
 	} else {
 		UTXOSet := blockchain.UTXOSet{bc}
-		FTXSet := blockchain.FTXset{bc}
 		UTXOSet.Reindex()
-		FTXSet.ReindexFTX()
 
 	}
 }
@@ -343,9 +341,7 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 
 			newBlock := bc.MineBlock(txs)
 			UTXOSet := blockchain.UTXOSet{bc}
-			FTXSet := blockchain.FTXset{bc}
 			UTXOSet.Reindex()
-			FTXSet.ReindexFTX()
 
 			fmt.Println("New block is mined!")
 
