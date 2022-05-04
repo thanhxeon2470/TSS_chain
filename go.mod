@@ -1,4 +1,4 @@
-module github.com/thanhxeon2470/testchain
+module github.com/thanhxeon2470/TSS_chain
 
 go 1.17
 

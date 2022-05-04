@@ -8,20 +8,20 @@ wallet chưa có xiền
  Your private key: 2brnL7iBJjQ8S1rZiNPrgz18J3dR9aZDssi7NkDGQfXg
 
 
-./testchain createblockchain -address 1Jg2aTGmJQpPMTNyKr7CMRspxV1pUAe5x4
+./TSS_chain createblockchain -address 1Jg2aTGmJQpPMTNyKr7CMRspxV1pUAe5x4
 
 Send from privatekey to address amount and allowuser
-./testchain send -from  7jczDSiSxs6ZNzQdTT6TydNHgNLKBNLjPWzJ2JHkiX -to 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7 -amount 5 -allowuser 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7 -ipfshash 1231233 -mine
+./TSS_chain send -from  7jczDSiSxs6ZNzQdTT6TydNHgNLKBNLjPWzJ2JHkiX -to 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7 -amount 5 -allowuser 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7 -ipfshash 1231233 -mine
 
 
-./testchain createwallet
+./TSS_chain createwallet
 
-./testchain getbalance -address 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7
+./TSS_chain getbalance -address 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7
 
-./testchain getbalance -address 1Jg2aTGmJQpPMTNyKr7CMRspxV1pUAe5x4
+./TSS_chain getbalance -address 1Jg2aTGmJQpPMTNyKr7CMRspxV1pUAe5x4
 
-./testchain printchain
+./TSS_chain printchain
 
-./testchain reindexutxo
+./TSS_chain reindexutxo
 
-./testchain startnode (-miner 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7) 
+./TSS_chain startnode (-miner 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7) 

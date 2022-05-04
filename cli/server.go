@@ -12,7 +12,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/thanhxeon2470/testchain/blockchain"
+	"github.com/thanhxeon2470/TSS_chain/blockchain"
 )
 
 const protocol = "tcp"

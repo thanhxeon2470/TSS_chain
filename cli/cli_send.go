@@ -5,11 +5,11 @@ import (
 	"log"
 	"os"
 
-	"github.com/thanhxeon2470/testchain/blockchain"
-	"github.com/thanhxeon2470/testchain/wallet"
+	"github.com/thanhxeon2470/TSS_chain/blockchain"
+	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
-func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash string, mineNow bool) {
+func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash string, mineNow bool) bool {
 	// if !wallet.ValidateAddress(prkFrom) {
 	// 	log.Panic("ERROR: Sender address is not valid")
 	// }
@@ -41,4 +41,5 @@ func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash s
 	}
 
 	fmt.Println("Success!")
+	return true
 }

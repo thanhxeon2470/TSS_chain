@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/thanhxeon2470/testchain/utils"
+	"github.com/thanhxeon2470/TSS_chain/utils"
 
 	"github.com/stretchr/testify/assert"
 )

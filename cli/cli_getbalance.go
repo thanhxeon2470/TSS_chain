@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/thanhxeon2470/testchain/blockchain"
-	"github.com/thanhxeon2470/testchain/utils"
-	"github.com/thanhxeon2470/testchain/wallet"
+	"github.com/thanhxeon2470/TSS_chain/blockchain"
+	"github.com/thanhxeon2470/TSS_chain/utils"
+	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
-func (cli *CLI) GetBalance(address string) {
+func (cli *CLI) GetBalance(address string) (string, int, []string) {
 	if !wallet.ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")
 	}
@@ -35,4 +35,5 @@ func (cli *CLI) GetBalance(address string) {
 	for i, link := range FTXs {
 		fmt.Printf("(%d) %s\n", i, link)
 	}
+	return address, balance, FTXs
 }
