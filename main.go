@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/thanhxeon2470/testchain/cli"
+	"github.com/thanhxeon2470/TSS_chain/cli"
 
 	"github.com/joho/godotenv"
 )

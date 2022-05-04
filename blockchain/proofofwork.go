@@ -7,7 +7,7 @@ import (
 	"math"
 	"math/big"
 
-	"github.com/thanhxeon2470/testchain/utils"
+	"github.com/thanhxeon2470/TSS_chain/utils"
 )
 
 var (

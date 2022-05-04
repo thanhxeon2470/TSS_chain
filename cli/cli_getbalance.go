@@ -3,9 +3,9 @@ package cli
 import (
 	"log"
 
-	"github.com/thanhxeon2470/testchain/blockchain"
-	"github.com/thanhxeon2470/testchain/utils"
-	"github.com/thanhxeon2470/testchain/wallet"
+	"github.com/thanhxeon2470/TSS_chain/blockchain"
+	"github.com/thanhxeon2470/TSS_chain/utils"
+	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
 func (cli *CLI) GetBalance(address string) {

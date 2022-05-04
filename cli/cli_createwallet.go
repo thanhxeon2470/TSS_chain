@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/thanhxeon2470/testchain/wallet"
+	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
 func (cli *CLI) CreateWallet() {
