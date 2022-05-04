@@ -13,7 +13,7 @@ func (cli *CLI) GetBalance(address string) (string, int, []string) {
 	if !wallet.ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")
 	}
-	bc := blockchain.NewBlockchain()
+	bc := blockchain.NewBlockchainView()
 	UTXOSet := blockchain.UTXOSet{bc}
 	FTXSet := blockchain.FTXset{bc}
 	defer bc.DB.Close()

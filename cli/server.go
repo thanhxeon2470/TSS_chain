@@ -355,9 +355,7 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 			}
 
 			for _, node := range knownNodes {
-				if node != addrLocal {
-					sendInv(node, "block", [][]byte{newBlock.Hash})
-				}
+				sendInv(node, "block", [][]byte{newBlock.Hash})
 			}
 
 			if len(mempool) > 0 {
@@ -436,7 +434,6 @@ func StartServer(minerAddress string) {
 	defer ln.Close()
 
 	bc := blockchain.NewBlockchain()
-
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
 		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
@@ -451,7 +448,6 @@ func StartServer(minerAddress string) {
 				dif += 1
 
 				if nodeAddress == knownNodes[0] {
-					// sendVersion(knownNodes[0], bc)
 					break
 				}
 				dif -= 1

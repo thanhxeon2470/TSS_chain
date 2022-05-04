@@ -17,19 +17,19 @@ func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash s
 		log.Panic("ERROR: Recipient address is not valid")
 	}
 
-	bc := blockchain.NewBlockchain()
-	UTXOSet := blockchain.UTXOSet{bc}
-	FTX := blockchain.FTXset{bc}
-	defer bc.DB.Close()
-
 	// wallets, err :=
 	// if err != nil {
 	// 	log.Panic(err)
 	// }
 	w := wallet.DecodePrivKey([]byte(prkFrom))
-	tx := blockchain.NewUTXOTransaction(w, to, amount, allowuser, iHash, &UTXOSet)
 
 	if mineNow {
+		bc := blockchain.NewBlockchain()
+		UTXOSet := blockchain.UTXOSet{bc}
+		FTX := blockchain.FTXset{bc}
+		defer bc.DB.Close()
+
+		tx := blockchain.NewUTXOTransaction(w, to, amount, allowuser, iHash, &UTXOSet)
 		cbTx := blockchain.NewCoinbaseTX(string(w.GetAddress()), "")
 		txs := []*blockchain.Transaction{cbTx, tx}
 
@@ -37,6 +37,9 @@ func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash s
 		UTXOSet.Update(newBlock)
 		FTX.UpdateFTX(newBlock)
 	} else {
+		bc := blockchain.NewBlockchainView()
+		UTXOSet := blockchain.UTXOSet{bc}
+		tx := blockchain.NewUTXOTransaction(w, to, amount, allowuser, iHash, &UTXOSet)
 		sendTx(os.Getenv("KNOWNNODE"), tx)
 	}
 

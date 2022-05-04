@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"os"
 
@@ -82,6 +83,54 @@ func NewBlockchain() *Blockchain {
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blocksBucket))
+		tip = b.Get([]byte("l"))
+
+		return nil
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+
+	bc := Blockchain{tip, db}
+
+	return &bc
+}
+
+func NewBlockchainView() *Blockchain {
+	if dbExists(dbFile) == false {
+		fmt.Println("No existing blockchain found. Create one first.")
+		os.Exit(1)
+	}
+	// sourceFileStat, err := os.Stat(dbFile)
+	// if err != nil {
+	// 		return nil
+	// }
+
+	// if !sourceFileStat.Mode().IsRegular() {
+	// 		return nil
+	// }
+
+	source, err := os.Open(dbFile)
+	if err != nil {
+		return nil
+	}
+	defer source.Close()
+
+	destination, err := os.Create("tmp.db")
+	if err != nil {
+		return nil
+	}
+	defer destination.Close()
+	_, _ = io.Copy(destination, source)
+
+	var tip []byte
+	db, err := bolt.Open("tmp.db", 0666, nil)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	err = db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		tip = b.Get([]byte("l"))
 
