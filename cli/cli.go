@@ -59,6 +59,7 @@ func (cli *CLI) Run() {
 	sendIPFShash := sendCmd.String("ipfshash", "", "Hash file of IPFS")
 	sendMine := sendCmd.Bool("mine", false, "Mine immediately on the same node")
 	startNodeMiner := startNodeCmd.String("miner", "", "Enable mining mode and send reward to ADDRESS")
+	startNodeStorageMiner := startNodeCmd.String("storageminer", "", "Enable mining mode and send reward to ADDRESS")
 
 	switch os.Args[1] {
 	case "getbalance":
@@ -158,6 +159,7 @@ func (cli *CLI) Run() {
 	}
 
 	if startNodeCmd.Parsed() {
+		StorageMiningAddress = *startNodeStorageMiner
 		cli.StartNode(*startNodeMiner)
 	}
 }

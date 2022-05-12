@@ -97,19 +97,13 @@ func NewBlockchain() *Blockchain {
 	return &bc
 }
 
+// Just View db when this node is running
+// Copy the database of node and open
 func NewBlockchainView() *Blockchain {
 	if dbExists(dbFile) == false {
 		fmt.Println("No existing blockchain found. Create one first.")
 		os.Exit(1)
 	}
-	// sourceFileStat, err := os.Stat(dbFile)
-	// if err != nil {
-	// 		return nil
-	// }
-
-	// if !sourceFileStat.Mode().IsRegular() {
-	// 		return nil
-	// }
 
 	source, err := os.Open(dbFile)
 	if err != nil {
