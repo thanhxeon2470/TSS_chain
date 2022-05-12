@@ -50,6 +50,7 @@ func ipfsClusterIsRunning() bool {
 	}
 	str := string(stdout)
 	if strings.Contains(str, "Addresses") {
+		fmt.Println("Ipfs cluster ctl is running!")
 		return true
 	}
 
@@ -72,7 +73,7 @@ func (cli *CLI) StartNode(minerAddress string) {
 		} else {
 			log.Panic("Wrong storage miner address!")
 		}
-		if ipfsIsRunning() != true && ipfsClusterIsRunning() != true {
+		if !(ipfsIsRunning() && ipfsClusterIsRunning()) {
 			os.Stderr.WriteString("Oops!!")
 			os.Exit(1)
 			return

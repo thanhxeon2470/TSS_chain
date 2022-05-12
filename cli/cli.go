@@ -21,7 +21,7 @@ func (cli *CLI) printUsage() {
 	fmt.Println("  printchain #-# Print all the blocks of the blockchain")
 	fmt.Println("  reindexutxo #-# Rebuilds the UTXO set")
 	fmt.Println("  send -from FROM -to TO -amount AMOUNT -allowuser ADDRESS -ipfshas IPFSHASH -mine #-# Send AMOUNT of coins from FROM address to TO. Mine on the same node, when -mine is set.")
-	fmt.Println("  startnode -miner ADDRESS #-# Start a node with ID specified in NODE_ID env. var. -miner enables mining")
+	fmt.Println("  startnode -miner ADDRESS -storageminer ADDRESS #-# Start a node -miner enables mining")
 }
 
 func (cli *CLI) validateArgs() {
@@ -59,7 +59,7 @@ func (cli *CLI) Run() {
 	sendIPFShash := sendCmd.String("ipfshash", "", "Hash file of IPFS")
 	sendMine := sendCmd.Bool("mine", false, "Mine immediately on the same node")
 	startNodeMiner := startNodeCmd.String("miner", "", "Enable mining mode and send reward to ADDRESS")
-	startNodeStorageMiner := startNodeCmd.String("storageminer", "", "Enable mining mode and send reward to ADDRESS")
+	startNodeStorageMiner := startNodeCmd.String("storageminer", "", "Enable storage mining mode and send reward to ADDRESS")
 
 	switch os.Args[1] {
 	case "getbalance":
