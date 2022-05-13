@@ -14,7 +14,6 @@ import (
 	"strings"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
-	"github.com/thanhxeon2470/TSS_chain/utils"
 )
 
 const protocol = "tcp"
@@ -24,6 +23,7 @@ const commandLength = 12
 var nodeAddress string
 var miningAddress string
 var StorageMiningAddress string
+var proposalCheck = false
 var knownNodes = []string{}
 var blocksInTransit = [][]byte{}
 var mempool = make(map[string]blockchain.Transaction)
@@ -62,6 +62,18 @@ type verzion struct {
 	Version    int
 	BestHeight int
 	// AddrFrom   string
+}
+
+type proposal struct {
+	StorageMiningAddress []byte
+	FileHash             []byte
+	Amount               int
+}
+
+// feedback proposal
+type fbproposal struct {
+	// addressWallet []byte
+	accept bool
 }
 
 func commandToBytes(command string) []byte {
@@ -172,6 +184,88 @@ func sendVersion(addr string, bc *blockchain.Blockchain) {
 	request := append(commandToBytes("version"), payload...)
 
 	sendData(addr, request)
+}
+
+func sendProposal(addr string, pps proposal) {
+	payload := gobEncode(pps)
+	request := append(commandToBytes("proposal"), payload...)
+	sendData(addr, request)
+}
+
+func sendFBProposal(addr string, feedback fbproposal) {
+	payload := gobEncode(feedback)
+	request := append(commandToBytes("feedback"), payload...)
+	sendData(addr, request)
+}
+
+func handleProposal(request []byte, addrFrom, addrLocal string) {
+	var buff bytes.Buffer
+	var payload proposal
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// add file to ipfs when receive tx
+	if len(StorageMiningAddress) > 0 {
+		if bytes.Compare(payload.StorageMiningAddress, []byte(StorageMiningAddress)) == 0 {
+			// Get file on ipfs
+			fh := string(payload.FileHash)
+			getCMD := exec.Command("ipfs", "get", fh)
+			stdout, err := getCMD.Output()
+			if err != nil {
+				return
+			}
+			str := string(stdout)
+			if strings.Contains(str, "100.00%") {
+				// And update this file to ipfs cluster
+				addCMD := exec.Command("ipfs-cluster-ctl", "add", fh)
+				stdout, err := addCMD.Output()
+				if err != nil {
+					return
+				}
+				str := string(stdout)
+				if !strings.Contains(str, "added") {
+					fmt.Print("Cant add file to ipfs")
+				}
+			} else {
+				fmt.Print("Cant get file from ipfs")
+			}
+
+		}
+		// var feedback fbproposal
+		feedback := fbproposal{true}
+		sendFBProposal(addrFrom, feedback)
+		return
+	}
+	if addrLocal == knownNodes[0] {
+		for _, node := range knownNodes {
+			if node != addrLocal && node != addrFrom {
+				sendProposal(node, payload)
+			}
+		}
+	}
+}
+
+func handleFeedback(request []byte, addrFrom, addrLocal string) {
+	var buff bytes.Buffer
+	var payload fbproposal
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+	proposalCheck = payload.accept
+	if addrLocal == knownNodes[0] {
+		for _, node := range knownNodes {
+			if node != addrLocal && node != addrFrom {
+				sendFBProposal(node, payload)
+			}
+		}
+	}
 }
 
 // func handleAddr(request []byte, bc *blockchain.Blockchain) {
@@ -318,37 +412,6 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 	tx := blockchain.DeserializeTransaction(txData)
 	mempool[hex.EncodeToString(tx.ID)] = tx
 
-	// add file to ipfs when receive tx
-	if len(StorageMiningAddress) > 0 {
-		pubKeyHash := utils.Base58Decode([]byte(StorageMiningAddress))
-
-		if bytes.Compare(pubKeyHash, tx.Vout[0].PubKeyHash) == 0 {
-			// Get file on ipfs
-			fh := string(tx.Ipfs[0].IpfsHash)
-			getCMD := exec.Command("ipfs", "get", fh)
-			stdout, err := getCMD.Output()
-			if err != nil {
-				return
-			}
-			str := string(stdout)
-			if strings.Contains(str, "100.00%") {
-				// And update this file to ipfs cluster
-				addCMD := exec.Command("ipfs-cluster-ctl", "add", fh)
-				stdout, err := addCMD.Output()
-				if err != nil {
-					return
-				}
-				str := string(stdout)
-				if !strings.Contains(str, "added") {
-					fmt.Print("Cant add file to ipfs")
-				}
-			} else {
-				fmt.Print("Cant get file from ipfs")
-			}
-
-		}
-	}
-
 	if addrLocal == knownNodes[0] {
 		for _, node := range knownNodes {
 			if node != addrLocal && node != addrFrom {
@@ -449,6 +512,10 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 		handleTx(request, bc, addrFrom, addrLocal)
 	case "version":
 		handleVersion(request, bc, addrFrom)
+	case "proposal":
+		handleProposal(request, addrFrom, addrLocal)
+	case "feedback":
+		handleFeedback(request, addrFrom, addrLocal)
 	default:
 		fmt.Println("Unknown command!")
 	}
