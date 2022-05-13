@@ -72,8 +72,8 @@ type proposal struct {
 
 // feedback proposal
 type fbproposal struct {
-	// addressWallet []byte
 	accept bool
+	// addressWallet []byte
 }
 
 func commandToBytes(command string) []byte {
@@ -192,8 +192,8 @@ func sendProposal(addr string, pps proposal) {
 	sendData(addr, request)
 }
 
-func sendFBProposal(addr string, feedback fbproposal) {
-	payload := gobEncode(feedback)
+func sendFBProposal(addr string, feedback bool) {
+	payload := gobEncode(fbproposal{feedback})
 	request := append(commandToBytes("feedback"), payload...)
 	sendData(addr, request)
 }
@@ -219,7 +219,7 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 				return
 			}
 			str := string(stdout)
-			if strings.Contains(str, "100.00%") {
+			if strings.Contains(str, fh) && strings.Contains(str, "Saving") {
 				// And update this file to ipfs cluster
 				addCMD := exec.Command("ipfs-cluster-ctl", "add", fh)
 				stdout, err := addCMD.Output()
@@ -233,12 +233,10 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 			} else {
 				fmt.Print("Cant get file from ipfs")
 			}
-
+			// var feedback fbproposal
+			sendFBProposal(addrFrom, true)
+			return
 		}
-		// var feedback fbproposal
-		feedback := fbproposal{true}
-		sendFBProposal(addrFrom, feedback)
-		return
 	}
 	if addrLocal == knownNodes[0] {
 		for _, node := range knownNodes {
@@ -262,7 +260,7 @@ func handleFeedback(request []byte, addrFrom, addrLocal string) {
 	if addrLocal == knownNodes[0] {
 		for _, node := range knownNodes {
 			if node != addrLocal && node != addrFrom {
-				sendFBProposal(node, payload)
+				sendFBProposal(node, payload.accept)
 			}
 		}
 	}
