@@ -34,9 +34,9 @@ func (cli *CLI) sendProposal(prkFrom, to string, amount int, allowuser []string,
 
 	// wait for proposal response
 	for (time.Now().Unix() - timeCreateTx) > 30 {
-		if proposalCheck == 1 {
+		if proposalCheck == "accept" {
 			sendTx(os.Getenv("KNOWNNODE"), tx)
-			proposalCheck = 0
+			proposalCheck = ""
 			break
 		}
 	}

@@ -23,7 +23,7 @@ const commandLength = 12
 var nodeAddress string
 var miningAddress string
 var StorageMiningAddress string
-var proposalCheck = 0
+var proposalCheck = ""
 var knownNodes = []string{}
 var blocksInTransit = [][]byte{}
 var mempool = make(map[string]blockchain.Transaction)
@@ -72,7 +72,7 @@ type proposal struct {
 
 // feedback proposal
 type fbproposal struct {
-	accept int
+	accept []byte
 	// addressWallet []byte
 }
 
@@ -192,7 +192,7 @@ func sendProposal(addr string, pps proposal) {
 	sendData(addr, request)
 }
 
-func sendFBProposal(addr string, feedback int) {
+func sendFBProposal(addr string, feedback []byte) {
 	payload := gobEncode(fbproposal{feedback})
 	request := append(commandToBytes("feedback"), payload...)
 	sendData(addr, request)
@@ -234,7 +234,7 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 				fmt.Print("Cant get file from ipfs")
 			}
 			// var feedback fbproposal
-			sendFBProposal(addrFrom, 1)
+			sendFBProposal(addrFrom, []byte("accept"))
 			return
 		}
 	}
@@ -256,7 +256,7 @@ func handleFeedback(request []byte, addrFrom, addrLocal string) {
 	if err != nil {
 		log.Panic(err)
 	}
-	proposalCheck = payload.accept
+	proposalCheck = string(payload.accept)
 	if addrLocal == knownNodes[0] {
 		for _, node := range knownNodes {
 			if node != addrLocal && node != addrFrom {
