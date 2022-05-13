@@ -219,7 +219,7 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 				return
 			}
 			str := string(stdout)
-			if strings.Contains(str, fh) && strings.Contains(str, "Saving") {
+			if strings.Contains(str, fh) {
 				// And update this file to ipfs cluster
 				addCMD := exec.Command("ipfs-cluster-ctl", "add", fh)
 				stdout, err := addCMD.Output()
