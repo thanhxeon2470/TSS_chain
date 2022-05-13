@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 )
@@ -409,8 +410,20 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 	txData := payload.Transaction
 	tx := blockchain.DeserializeTransaction(txData)
 	mempool[hex.EncodeToString(tx.ID)] = tx
+	if addrFrom == "127.0.0.1:3000" {
+		timeCreateTx := time.Now().Unix()
+		fmt.Print("Wait for storage miner accept proposal!...")
 
-	if addrLocal == knownNodes[0] {
+		// wait for proposal response
+		for (time.Now().Unix() - timeCreateTx) < 30 {
+			if proposalCheck {
+				sendTx(knownNodes[0], &tx)
+				proposalCheck = false
+				fmt.Print("Deal successfully!!")
+				break
+			}
+		}
+	} else if addrLocal == knownNodes[0] {
 		for _, node := range knownNodes {
 			if node != addrLocal && node != addrFrom {
 				sendInv(node, "tx", [][]byte{tx.ID})
