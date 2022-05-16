@@ -25,7 +25,7 @@ func (cli *CLI) sendProposal(prkFrom, to string, amount int, allowuser []string,
 	bc := blockchain.NewBlockchainView()
 	UTXOSet := blockchain.UTXOSet{bc}
 	tx := blockchain.NewUTXOTransaction(w, to, amount, allowuser, iHash, &UTXOSet)
-	proposal := proposal{[]byte(to), []byte(iHash), amount}
+	proposal := proposal{tx.ID, []byte(to), []byte(iHash), amount}
 	sendProposal(os.Getenv("KNOWNNODE"), proposal)
 	sendTx("127.0.0.1:3000", tx)
 

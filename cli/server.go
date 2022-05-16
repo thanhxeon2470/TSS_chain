@@ -12,7 +12,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 )
@@ -25,6 +24,7 @@ var nodeAddress string
 var miningAddress string
 var StorageMiningAddress string
 var proposalCheck = false
+var randomIdentity = 0
 var knownNodes = []string{}
 var blocksInTransit = [][]byte{}
 var mempool = make(map[string]blockchain.Transaction)
@@ -66,6 +66,7 @@ type verzion struct {
 }
 
 type proposal struct {
+	TxHash               []byte
 	StorageMiningAddress []byte
 	FileHash             []byte
 	Amount               int
@@ -73,8 +74,8 @@ type proposal struct {
 
 // feedback proposal
 type fbproposal struct {
+	TxHash []byte
 	Accept bool
-	// addressWallet []byte
 }
 
 func commandToBytes(command string) []byte {
@@ -193,8 +194,8 @@ func sendProposal(addr string, pps proposal) {
 	sendData(addr, request)
 }
 
-func sendFBProposal(addr string, feedback bool) {
-	payload := gobEncode(fbproposal{feedback})
+func sendFBProposal(addr string, txid []byte, feedback bool) {
+	payload := gobEncode(fbproposal{txid, feedback})
 	request := append(commandToBytes("feedback"), payload...)
 	sendData(addr, request)
 }
@@ -234,8 +235,8 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 			} else {
 				fmt.Print("Cant get file from ipfs")
 			}
-			// var feedback fbproposal
-			sendFBProposal(addrFrom, true)
+
+			sendFBProposal(addrFrom, payload.TxHash, true)
 			return
 		}
 	}
@@ -257,11 +258,20 @@ func handleFeedback(request []byte, addrFrom, addrLocal string) {
 	if err != nil {
 		log.Panic(err)
 	}
-	proposalCheck = payload.Accept
+	// proposalCheck = payload.Accept
+	// randomIdentity = payload.RandomIdentity
 	if addrLocal == knownNodes[0] {
 		for _, node := range knownNodes {
 			if node != addrLocal && node != addrFrom {
-				sendFBProposal(node, payload.Accept)
+				sendFBProposal(node, payload.TxHash, payload.Accept)
+			}
+		}
+	} else if len(mempool) > 0 {
+		// When received feedback proposal =>>> check this and send transaction
+		for id := range mempool {
+			if bytes.Compare([]byte(id), payload.TxHash) == 0 {
+				tx := mempool[id]
+				sendTx(knownNodes[0], &tx)
 			}
 		}
 	}
@@ -410,20 +420,8 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 	txData := payload.Transaction
 	tx := blockchain.DeserializeTransaction(txData)
 	mempool[hex.EncodeToString(tx.ID)] = tx
-	if addrFrom == "127.0.0.1:3000" {
-		timeCreateTx := time.Now().Unix()
-		fmt.Print("Wait for storage miner accept proposal!...")
 
-		// wait for proposal response
-		for (time.Now().Unix() - timeCreateTx) < 30 {
-			if proposalCheck {
-				sendTx(knownNodes[0], &tx)
-				proposalCheck = false
-				fmt.Print("Deal successfully!!")
-				break
-			}
-		}
-	} else if addrLocal == knownNodes[0] {
+	if addrLocal == knownNodes[0] {
 		for _, node := range knownNodes {
 			if node != addrLocal && node != addrFrom {
 				sendInv(node, "tx", [][]byte{tx.ID})
