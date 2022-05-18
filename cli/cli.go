@@ -48,16 +48,24 @@ func (cli *CLI) Run() {
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
 	reindexUTXOCmd := flag.NewFlagSet("reindexutxo", flag.ExitOnError)
 	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
+	sendContentCmd := flag.NewFlagSet("sendcontent", flag.ExitOnError)
 	startNodeCmd := flag.NewFlagSet("startnode", flag.ExitOnError)
 
 	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
+
 	createBlockchainAddress := createBlockchainCmd.String("address", "", "The address to send genesis block reward to")
-	sendFrom := sendCmd.String("from", "", "Source wallet address")
+
+	sendFrom := sendCmd.String("from", "", "Source wallet private key")
 	sendTo := sendCmd.String("to", "", "Destination wallet address")
 	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
-	sendAllow := sendCmd.String("allowuser", "", "These user can access to this file")
-	sendIPFShash := sendCmd.String("ipfshash", "", "Hash file of IPFS")
 	sendMine := sendCmd.Bool("mine", false, "Mine immediately on the same node")
+
+	sendContentFrom := sendContentCmd.String("from", "", "Source wallet private key")
+	sendContentTo := sendContentCmd.String("to", "", "Destination wallet address")
+	sendContentAllow := sendContentCmd.String("allowuser", "", "These user can access to this file")
+	sendContentIPFShash := sendContentCmd.String("ipfshash", "", "Hash file of IPFS")
+	sendContentAmount := sendContentCmd.Int("amount", 0, "Amount to send")
+
 	startNodeMiner := startNodeCmd.String("miner", "", "Enable mining mode and send reward to ADDRESS")
 	startNodeStorageMiner := startNodeCmd.String("storageminer", "", "Enable storage mining mode and send reward to ADDRESS")
 
@@ -100,6 +108,11 @@ func (cli *CLI) Run() {
 		}
 	case "send":
 		err := sendCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
+	case "sendcontent":
+		err := sendContentCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Panic(err)
 		}
@@ -154,8 +167,13 @@ func (cli *CLI) Run() {
 			sendCmd.Usage()
 			os.Exit(1)
 		}
-		alwuser := strings.Split(*sendAllow, "_")
-		cli.Send(*sendFrom, *sendTo, *sendAmount, alwuser, *sendIPFShash, *sendMine)
+		cli.Send(*sendFrom, *sendTo, *sendAmount, *sendMine)
+	}
+
+	if sendContentCmd.Parsed() {
+
+		alwuser := strings.Split(*sendContentAllow, "_")
+		cli.SendProposal(*sendContentFrom, *sendContentTo, *sendContentAmount, alwuser, *sendContentIPFShash)
 	}
 
 	if startNodeCmd.Parsed() {

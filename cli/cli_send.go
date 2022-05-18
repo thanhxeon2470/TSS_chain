@@ -9,7 +9,7 @@ import (
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
-func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash string, mineNow bool) bool {
+func (cli *CLI) Send(prkFrom, to string, amount int, mineNow bool) bool {
 	// if !wallet.ValidateAddress(prkFrom) {
 	// 	log.Panic("ERROR: Sender address is not valid")
 	// }
@@ -29,7 +29,7 @@ func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash s
 		FTX := blockchain.FTXset{bc}
 		defer bc.DB.Close()
 
-		tx := blockchain.NewUTXOTransaction(w, to, amount, allowuser, iHash, &UTXOSet)
+		tx := blockchain.NewUTXOTransaction(w, to, amount, nil, "", &UTXOSet)
 		cbTx := blockchain.NewCoinbaseTX(string(w.GetAddress()), "")
 		txs := []*blockchain.Transaction{cbTx, tx}
 
@@ -39,7 +39,7 @@ func (cli *CLI) Send(prkFrom, to string, amount int, allowuser []string, iHash s
 	} else {
 		bc := blockchain.NewBlockchainView()
 		UTXOSet := blockchain.UTXOSet{bc}
-		tx := blockchain.NewUTXOTransaction(w, to, amount, allowuser, iHash, &UTXOSet)
+		tx := blockchain.NewUTXOTransaction(w, to, amount, nil, "", &UTXOSet)
 		sendTx(os.Getenv("KNOWNNODE"), tx)
 	}
 

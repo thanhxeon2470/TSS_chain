@@ -77,8 +77,9 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 		txCopy.Vin[inID].PubKey = prevTx.Vout[vin.Vout].PubKeyHash
 
 		dataToSign := fmt.Sprintf("%x\n", txCopy)
+		hashToSign := sha256.Sum256([]byte(dataToSign))
 
-		r, s, err := ecdsa.Sign(rand.Reader, &privKey, []byte(dataToSign))
+		r, s, err := ecdsa.Sign(rand.Reader, &privKey, hashToSign[:])
 		if err != nil {
 			log.Panic(err)
 		}
@@ -111,8 +112,8 @@ func (tx Transaction) String() string {
 	}
 	if len(tx.Ipfs) > 0 {
 		lines = append(lines, fmt.Sprintf("     IPFS: %s", tx.Ipfs[0].IpfsHash))
-		for i, allowuser := range tx.Ipfs {
-			lines = append(lines, fmt.Sprintf("       User %d:  %x", i, allowuser.PubKeyHash))
+		for i, allowuser := range tx.Ipfs[0].PubKeyHash {
+			lines = append(lines, fmt.Sprintf("       User %d:  %x", i, allowuser))
 		}
 	}
 
@@ -134,7 +135,7 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	}
 
 	for _, ipfs := range tx.Ipfs {
-		ipfsList = append(ipfsList, TXIpfs{ipfs.IpfsHash, ipfs.PubKeyHash})
+		ipfsList = append(ipfsList, TXIpfs{ipfs.PubKeyOwner, ipfs.SignatureFile, ipfs.IpfsHash, ipfs.PubKeyHash})
 	}
 	txCopy := Transaction{tx.ID, ipfsList, inputs, outputs}
 
@@ -174,9 +175,10 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 		y.SetBytes(vin.PubKey[(keyLen / 2):])
 
 		dataToVerify := fmt.Sprintf("%x\n", txCopy)
+		hashToVerify := sha256.Sum256([]byte(dataToVerify))
 
 		rawPubKey := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
-		if ecdsa.Verify(&rawPubKey, []byte(dataToVerify), &r, &s) == false {
+		if ecdsa.Verify(&rawPubKey, hashToVerify[:], &r, &s) == false {
 			return false
 		}
 		txCopy.Vin[inID].PubKey = nil
@@ -206,7 +208,7 @@ func NewCoinbaseTX(to, data string) *Transaction {
 }
 
 // NewUTXOTransaction creates a new transaction
-func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddress []string, ipfsHash string, UTXOSet *UTXOSet) *Transaction {
+func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddresses []string, ipfsHash string, UTXOSet *UTXOSet) *Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
 	var ipfsList []TXIpfs
@@ -240,11 +242,10 @@ func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddress []
 
 	// Build a list of ipfs
 
-	ipfsList = append(ipfsList, *NewTXIpfs(ipfsHash, string(w.GetAddress())))
-	for _, addr := range allowaddress {
-		if wallet.ValidateAddress(addr) {
-			ipfsList = append(ipfsList, *NewTXIpfs(ipfsHash, addr))
-		}
+	if ipfsHash != "" {
+		allowaddresses = append(allowaddresses, string(w.GetAddress()))
+		ipfsList = append(ipfsList, *NewTXIpfs(string(w.PublicKey), nil, ipfsHash, allowaddresses))
+		ipfsList[0].SignIPFS(w.PrivateKey)
 	}
 
 	tx := Transaction{nil, ipfsList, inputs, outputs}

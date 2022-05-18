@@ -8,7 +8,7 @@ import (
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
-func (cli *CLI) sendProposal(prkFrom, to string, amount int, allowuser []string, iHash string) bool {
+func (cli *CLI) SendProposal(prkFrom, to string, amount int, allowuser []string, iHash string) bool {
 	// if !wallet.ValidateAddress(prkFrom) {
 	// 	log.Panic("ERROR: Sender address is not valid")
 	// }
