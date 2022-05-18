@@ -436,8 +436,10 @@ func (bc *Blockchain) VerifyTransaction(tx *Transaction) bool {
 		}
 		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
 	}
-
-	return tx.Verify(prevTXs) && tx.Ipfs[0].verifyIPFS()
+	if len(tx.Ipfs) > 0 {
+		return tx.Verify(prevTXs) && tx.Ipfs[0].verifyIPFS()
+	}
+	return tx.Verify(prevTXs)
 }
 
 func dbExists(dbFile string) bool {

@@ -9,7 +9,7 @@ import (
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
-func (cli *CLI) GetBalance(address string) (string, int, []string) {
+func (cli *CLI) GetBalance(address string) (string, int, map[string]bool) {
 	if !wallet.ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")
 	}
@@ -32,8 +32,14 @@ func (cli *CLI) GetBalance(address string) (string, int, []string) {
 	if len(FTXs) > 0 {
 		fmt.Printf("List of file hash\n")
 	}
-	for i, link := range FTXs {
-		fmt.Printf("(%d) %s\n", i, link)
+	i := 0
+	for link, author := range FTXs {
+		i += 1
+		if author {
+			fmt.Printf("(%d) %s (author)\n", i, link)
+		} else {
+			fmt.Printf("(%d) %s\n", i, link)
+		}
 	}
 	return address, balance, FTXs
 }

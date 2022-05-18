@@ -33,6 +33,16 @@ func (t *TXIpfs) Lock(addresses [][]byte) {
 
 // IsLockedWithKey checks if the ipfs hash can be used by the owner of the pubkey
 func (t *TXIpfs) IsLockedWithKey(pubKeyHash []byte) bool {
+	pubKeyOwnerHash := wallet.HashPubKey(t.PubKeyOwner)
+
+	if bytes.Equal(pubKeyOwnerHash, pubKeyHash) {
+		return true
+	}
+	return false
+}
+
+// IsOwner check the the author
+func (t *TXIpfs) IsOwner(pubKeyHash []byte) bool {
 	for _, hash := range t.PubKeyHash {
 		if bytes.Compare(hash, pubKeyHash) == 0 {
 			return true

@@ -15,8 +15,9 @@ type FTXset struct {
 	Blockchain *Blockchain
 }
 
-func (f FTXset) FindFTX(pubKeyHash []byte) []string {
-	var listFTX []string
+//FindFTX to find all file this pubKeyHash cant access, but if map to true is Author else none
+func (f FTXset) FindFTX(pubKeyHash []byte) map[string]bool {
+	listFTX := make(map[string]bool)
 	db := f.Blockchain.DB
 	err := db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(ftxBucket))
@@ -27,7 +28,11 @@ func (f FTXset) FindFTX(pubKeyHash []byte) []string {
 
 			for _, ipfs := range ipfsList.TXIpfsList {
 				if ipfs.IsLockedWithKey(pubKeyHash) {
-					listFTX = append(listFTX, string(ipfs.IpfsHash))
+					if ipfs.IsOwner(pubKeyHash) {
+						listFTX[string(ipfs.IpfsHash)] = true
+					} else {
+						listFTX[string(ipfs.IpfsHash)] = false
+					}
 				}
 			}
 
@@ -38,7 +43,6 @@ func (f FTXset) FindFTX(pubKeyHash []byte) []string {
 	if err != nil {
 		log.Panic(err)
 	}
-
 	return listFTX
 
 }
