@@ -10,7 +10,7 @@ import (
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
-func (cli *CLI) GetBalance(address string) (string, int, map[string]blockchain.InfoIPFS) {
+func (cli *CLI) GetBalance(address string) (int, map[string]blockchain.InfoIPFS) {
 	if !wallet.ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")
 	}
@@ -42,5 +42,5 @@ func (cli *CLI) GetBalance(address string) (string, int, map[string]blockchain.I
 			fmt.Printf("(%d) %s | %s | \n", i, time.Unix(in4.Exp, 0), link)
 		}
 	}
-	return address, balance, FTXs
+	return balance, FTXs
 }
