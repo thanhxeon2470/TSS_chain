@@ -3,13 +3,14 @@ package cli
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/utils"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
-func (cli *CLI) GetBalance(address string) (string, int, map[string]bool) {
+func (cli *CLI) GetBalance(address string) (string, int, map[string]blockchain.InfoIPFS) {
 	if !wallet.ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")
 	}
@@ -33,12 +34,12 @@ func (cli *CLI) GetBalance(address string) (string, int, map[string]bool) {
 		fmt.Printf("List of file hash\n")
 	}
 	i := 0
-	for link, author := range FTXs {
+	for link, in4 := range FTXs {
 		i += 1
-		if author {
-			fmt.Printf("(%d) %s (author)\n", i, link)
+		if in4.Author {
+			fmt.Printf("(%d) %s | %s | (author)\n", i, time.Unix(in4.Exp, 0), link)
 		} else {
-			fmt.Printf("(%d) %s\n", i, link)
+			fmt.Printf("(%d) %s | %s | \n", i, time.Unix(in4.Exp, 0), link)
 		}
 	}
 	return address, balance, FTXs

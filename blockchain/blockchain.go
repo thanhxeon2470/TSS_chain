@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/boltdb/bolt"
 )
@@ -264,10 +265,12 @@ func (bc *Blockchain) FindFTX() map[string]TXIpfsList {
 				// 		// continue ipfsList
 				// 	}
 				// }
+				if ipfs.Exp > time.Now().Unix() {
+					ipfsList := FTX[txID]
+					ipfsList.TXIpfsList = append(ipfsList.TXIpfsList, ipfs)
+					FTX[txID] = ipfsList
+				}
 
-				ipfsList := FTX[txID]
-				ipfsList.TXIpfsList = append(ipfsList.TXIpfsList, ipfs)
-				FTX[txID] = ipfsList
 			}
 
 			// if tx.IsCoinbase() == false {

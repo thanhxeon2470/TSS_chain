@@ -8,19 +8,23 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-const ftxBucket = "filealive"
+const FtxBucket = "filealive"
 
 // FTX is File transaction
 type FTXset struct {
 	Blockchain *Blockchain
 }
+type InfoIPFS struct {
+	Author bool
+	Exp    int64
+}
 
 //FindFTX to find all file this pubKeyHash cant access, but if map to true is Author else none
-func (f FTXset) FindFTX(pubKeyHash []byte) map[string]bool {
-	listFTX := make(map[string]bool)
+func (f FTXset) FindFTX(pubKeyHash []byte) map[string]InfoIPFS {
+	listFTX := make(map[string]InfoIPFS)
 	db := f.Blockchain.DB
 	err := db.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(ftxBucket))
+		b := tx.Bucket([]byte(FtxBucket))
 		c := b.Cursor()
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
@@ -29,9 +33,9 @@ func (f FTXset) FindFTX(pubKeyHash []byte) map[string]bool {
 			for _, ipfs := range ipfsList.TXIpfsList {
 				if ipfs.IsLockedWithKey(pubKeyHash) {
 					if ipfs.IsOwner(pubKeyHash) {
-						listFTX[string(ipfs.IpfsHash)] = true
+						listFTX[ipfs.IpfsHash] = InfoIPFS{true, ipfs.Exp}
 					} else {
-						listFTX[string(ipfs.IpfsHash)] = false
+						listFTX[ipfs.IpfsHash] = InfoIPFS{false, ipfs.Exp}
 					}
 				}
 			}
@@ -49,7 +53,7 @@ func (f FTXset) FindFTX(pubKeyHash []byte) map[string]bool {
 
 func (f FTXset) ReindexFTX() {
 	db := f.Blockchain.DB
-	bucketName := []byte(ftxBucket)
+	bucketName := []byte(FtxBucket)
 
 	// Renew bucket
 	err := db.Update(func(tx *bolt.Tx) error {
@@ -96,7 +100,7 @@ func (f FTXset) UpdateFTX(block *Block) {
 	db := f.Blockchain.DB
 
 	err := db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(ftxBucket))
+		b := tx.Bucket([]byte(FtxBucket))
 
 		for _, tx := range block.Transactions {
 			// if tx.IsCoinbase() == false {

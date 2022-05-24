@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
+	"github.com/thanhxeon2470/TSS_chain/helper"
 )
 
 const protocol = "tcp"
@@ -530,6 +531,15 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 	}
 
 	conn.Close()
+	rm := helper.RemoveExpireIPFS(bc)
+	if len(rm) > 0 {
+		fmt.Println("Remove flie(s)!")
+		for i, str := range rm {
+			fmt.Printf("(%d) %s\n", i, str)
+
+		}
+
+	}
 }
 
 // StartServer starts a node

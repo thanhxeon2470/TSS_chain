@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"math/big"
 	"strings"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 
@@ -111,7 +112,7 @@ func (tx Transaction) String() string {
 		lines = append(lines, fmt.Sprintf("       Script: %x", output.PubKeyHash))
 	}
 	if len(tx.Ipfs) > 0 {
-		lines = append(lines, fmt.Sprintf("     IPFS: %s", tx.Ipfs[0].IpfsHash))
+		lines = append(lines, fmt.Sprintf("     IPFS: %s | EXP: %s", tx.Ipfs[0].IpfsHash, time.Unix(tx.Ipfs[0].Exp, 0)))
 		for i, allowuser := range tx.Ipfs[0].PubKeyHash {
 			lines = append(lines, fmt.Sprintf("       User %d:  %x", i, allowuser))
 		}
@@ -135,7 +136,7 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	}
 
 	for _, ipfs := range tx.Ipfs {
-		ipfsList = append(ipfsList, TXIpfs{ipfs.PubKeyOwner, ipfs.SignatureFile, ipfs.IpfsHash, ipfs.PubKeyHash})
+		ipfsList = append(ipfsList, TXIpfs{ipfs.PubKeyOwner, ipfs.SignatureFile, ipfs.IpfsHash, ipfs.PubKeyHash, ipfs.Exp})
 	}
 	txCopy := Transaction{tx.ID, ipfsList, inputs, outputs}
 

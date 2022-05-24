@@ -9,6 +9,7 @@ import (
 	"encoding/gob"
 	"log"
 	"math/big"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/utils"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
@@ -20,6 +21,7 @@ type TXIpfs struct {
 	SignatureFile []byte
 	IpfsHash      string
 	PubKeyHash    [][]byte
+	Exp           int64
 }
 
 // Lock signs the ipfs hash
@@ -53,7 +55,7 @@ func (t *TXIpfs) IsOwner(pubKeyHash []byte) bool {
 
 // NewTXIpfs create a new TXIpfs
 func NewTXIpfs(pubKeyOwner string, signatureFile []byte, ipfsHash string, addresses []string) *TXIpfs {
-	txi := &TXIpfs{[]byte(pubKeyOwner), signatureFile, ipfsHash, nil}
+	txi := &TXIpfs{[]byte(pubKeyOwner), signatureFile, ipfsHash, nil, time.Now().Unix() + 31536000} // exp 1 year
 	var addressesByte [][]byte
 	for _, address := range addresses {
 		if wallet.ValidateAddress(address) {
