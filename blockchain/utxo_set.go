@@ -191,3 +191,55 @@ func (u UTXOSet) Update(block *Block) {
 		log.Panic(err)
 	}
 }
+
+func (u UTXOSet) UpdateFromTX(txDB *Transaction) {
+	db := u.Blockchain.DB
+
+	err := db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(utxoBucket))
+
+		// for _, tx := range block.Transactions {
+		if txDB.IsCoinbase() == false {
+			for _, vin := range txDB.Vin {
+				updatedOuts := TXOutputs{}
+				outsBytes := b.Get(vin.Txid)
+				outs := DeserializeOutputs(outsBytes)
+
+				for outIdx, out := range outs.Outputs {
+					if outIdx != vin.Vout {
+						updatedOuts.Outputs = append(updatedOuts.Outputs, out)
+					}
+				}
+
+				if len(updatedOuts.Outputs) == 0 {
+					err := b.Delete(vin.Txid)
+					if err != nil {
+						log.Panic(err)
+					}
+				} else {
+					err := b.Put(vin.Txid, updatedOuts.Serialize())
+					if err != nil {
+						log.Panic(err)
+					}
+				}
+
+			}
+		}
+
+		newOutputs := TXOutputs{}
+		for _, out := range txDB.Vout {
+			newOutputs.Outputs = append(newOutputs.Outputs, out)
+		}
+
+		err := b.Put(txDB.ID, newOutputs.Serialize())
+		if err != nil {
+			log.Panic(err)
+		}
+		// }
+
+		return nil
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+}

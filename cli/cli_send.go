@@ -30,6 +30,11 @@ func (cli *CLI) Send(prkFrom, to string, amount int, mineNow bool) bool {
 		defer bc.DB.Close()
 
 		tx := blockchain.NewUTXOTransaction(w, to, amount, nil, "", &UTXOSet)
+		if tx == nil {
+			fmt.Println("Fail to create transaction!")
+
+			return false
+		}
 		cbTx := blockchain.NewCoinbaseTX(string(w.GetAddress()), "")
 		txs := []*blockchain.Transaction{cbTx, tx}
 
@@ -40,6 +45,11 @@ func (cli *CLI) Send(prkFrom, to string, amount int, mineNow bool) bool {
 		bc := blockchain.NewBlockchainView()
 		UTXOSet := blockchain.UTXOSet{bc}
 		tx := blockchain.NewUTXOTransaction(w, to, amount, nil, "", &UTXOSet)
+		if tx == nil {
+			fmt.Println("Fail to create transaction!")
+
+			return false
+		}
 		sendTx(os.Getenv("KNOWNNODE"), tx)
 	}
 

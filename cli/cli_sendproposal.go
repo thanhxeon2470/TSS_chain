@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -25,6 +26,11 @@ func (cli *CLI) SendProposal(prkFrom, to string, amount int, allowuser []string,
 	bc := blockchain.NewBlockchainView()
 	UTXOSet := blockchain.UTXOSet{bc}
 	tx := blockchain.NewUTXOTransaction(w, to, amount, allowuser, iHash, &UTXOSet)
+	if tx == nil {
+		fmt.Println("Fail to create transaction!")
+
+		return false
+	}
 	proposal := proposal{tx.ID, []byte(to), []byte(iHash), amount}
 	sendProposal(os.Getenv("KNOWNNODE"), proposal)
 	sendTx("127.0.0.1:3000", tx)

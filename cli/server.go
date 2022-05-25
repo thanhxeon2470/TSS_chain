@@ -422,6 +422,9 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 	tx := blockchain.DeserializeTransaction(txData)
 	mempool[hex.EncodeToString(tx.ID)] = tx
 
+	UTXO := blockchain.UTXOSet{bc}
+	UTXO.UpdateFromTX(&tx)
+
 	if addrLocal == knownNodes[0] {
 		for _, node := range knownNodes {
 			if node != addrLocal && node != addrFrom {
