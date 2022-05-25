@@ -79,7 +79,10 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 
 		dataToSign := fmt.Sprintf("%x\n", txCopy)
 		hashToSign := sha256.Sum256([]byte(dataToSign))
-
+		fmt.Print("SIGN")
+		fmt.Println(dataToSign)
+		fmt.Print("HASH")
+		fmt.Println(hashToSign)
 		r, s, err := ecdsa.Sign(rand.Reader, &privKey, hashToSign[:])
 		if err != nil {
 			log.Panic(err)
@@ -177,7 +180,10 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 
 		dataToVerify := fmt.Sprintf("%x\n", txCopy)
 		hashToVerify := sha256.Sum256([]byte(dataToVerify))
-
+		fmt.Print("VERIFY")
+		fmt.Println(dataToVerify)
+		fmt.Print("HASH")
+		fmt.Println(hashToVerify)
 		rawPubKey := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
 		if ecdsa.Verify(&rawPubKey, hashToVerify[:], &r, &s) == false {
 			return false
