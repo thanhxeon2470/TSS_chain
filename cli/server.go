@@ -270,7 +270,7 @@ func handleFeedback(request []byte, addrFrom, addrLocal string) {
 	} else if len(mempool) > 0 {
 		// When received feedback proposal =>>> check this and send transaction
 		for id := range mempool {
-			if bytes.Compare([]byte(id), payload.TxHash) == 0 {
+			if id == hex.EncodeToString(payload.TxHash) {
 				tx := mempool[id]
 				sendTx(knownNodes[0], &tx)
 			}
