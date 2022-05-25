@@ -70,13 +70,29 @@ func CreateBlockchain(address string) *Blockchain {
 	return &bc
 }
 
+// Copy new chain from an old
+func CopyChain(pathDest, pathSource string) error {
+	source, err := os.Open(pathSource)
+	if err != nil {
+		return err
+	}
+	defer source.Close()
+
+	destination, err := os.Create(pathDest)
+	if err != nil {
+		return err
+	}
+	defer destination.Close()
+	_, _ = io.Copy(destination, source)
+	return nil
+}
+
 // NewBlockchain creates a new Blockchain with genesis Block
 func NewBlockchain() *Blockchain {
-	var dbFile = dbFile
 	if dbExists(dbFile) == false {
 		if dbExists(dbFileGenesis) {
 			fmt.Println("No existing blockchain found. But we find a genesis blockchain!")
-			dbFile = dbFileGenesis
+			_ = CopyChain(dbFile, dbFileGenesis)
 		} else {
 			fmt.Println("No existing blockchain found. Create one first.")
 			os.Exit(1)
@@ -108,25 +124,19 @@ func NewBlockchain() *Blockchain {
 // Copy the database of node and open
 func NewBlockchainView() *Blockchain {
 	if dbExists(dbFile) == false {
-		fmt.Println("No existing blockchain found. Create one first.")
-		os.Exit(1)
+		if dbExists(dbFileGenesis) {
+			fmt.Println("No existing blockchain found. But we find a genesis blockchain!")
+			_ = CopyChain(dbFile, dbFileGenesis)
+		} else {
+			fmt.Println("No existing blockchain found. Create one first.")
+			os.Exit(1)
+		}
 	}
-
-	source, err := os.Open(dbFile)
-	if err != nil {
-		return nil
-	}
-	defer source.Close()
-
-	destination, err := os.Create("tmp.db")
-	if err != nil {
-		return nil
-	}
-	defer destination.Close()
-	_, _ = io.Copy(destination, source)
+	tmpDB := "tmp.db"
+	_ = CopyChain(tmpDB, dbFile)
 
 	var tip []byte
-	db, err := bolt.Open("tmp.db", 0666, nil)
+	db, err := bolt.Open(tmpDB, 0666, nil)
 	if err != nil {
 		log.Panic(err)
 	}
