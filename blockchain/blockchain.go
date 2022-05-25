@@ -430,9 +430,9 @@ func (bc *Blockchain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey)
 		}
 		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
 	}
-	// if len(tx.Ipfs) > 0 {
-	// 	tx.Ipfs[0].SignIPFS(privKey)
-	// }
+	if len(tx.Ipfs) > 0 {
+		tx.Ipfs[0].SignIPFS(privKey)
+	}
 	tx.Sign(privKey, prevTXs)
 }
 
@@ -452,7 +452,7 @@ func (bc *Blockchain) VerifyTransaction(tx *Transaction) bool {
 		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
 	}
 	if len(tx.Ipfs) > 0 {
-		return tx.Verify(prevTXs) //&& tx.Ipfs[0].verifyIPFS()
+		return tx.Verify(prevTXs) && tx.Ipfs[0].verifyIPFS()
 	}
 	return tx.Verify(prevTXs)
 }
