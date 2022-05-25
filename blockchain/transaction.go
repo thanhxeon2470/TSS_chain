@@ -139,7 +139,7 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	}
 
 	for _, ipfs := range tx.Ipfs {
-		ipfsList = append(ipfsList, TXIpfs{ipfs.PubKeyOwner, ipfs.SignatureFile, ipfs.IpfsHash, ipfs.PubKeyHash, ipfs.Exp})
+		ipfsList = append(ipfsList, TXIpfs{nil, ipfs.SignatureFile, "", nil, 0})
 	}
 	txCopy := Transaction{tx.ID, ipfsList, inputs, outputs}
 
