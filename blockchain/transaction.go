@@ -139,7 +139,7 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	}
 
 	for _, ipfs := range tx.Ipfs {
-		ipfsList = append(ipfsList, TXIpfs{nil, ipfs.SignatureFile, "", nil, 0})
+		ipfsList = append(ipfsList, TXIpfs{ipfs.PubKeyOwner, ipfs.SignatureFile, ipfs.IpfsHash, ipfs.PubKeyHash, ipfs.Exp})
 	}
 	txCopy := Transaction{tx.ID, ipfsList, inputs, outputs}
 
@@ -252,7 +252,7 @@ func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddresses 
 	if ipfsHash != "" {
 		allowaddresses = append(allowaddresses, string(w.GetAddress()))
 		ipfsList = append(ipfsList, *NewTXIpfs(string(w.PublicKey), nil, ipfsHash, allowaddresses))
-		ipfsList[0].SignIPFS(w.PrivateKey)
+		// ipfsList[0].SignIPFS(w.PrivateKey)
 	}
 
 	tx := Transaction{nil, ipfsList, inputs, outputs}
