@@ -138,9 +138,9 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 		outputs = append(outputs, TXOutput{vout.Value, vout.PubKeyHash})
 	}
 
-	for _, ipfs := range tx.Ipfs {
-		ipfsList = append(ipfsList, TXIpfs{ipfs.PubKeyOwner, ipfs.SignatureFile, ipfs.IpfsHash, ipfs.PubKeyHash, ipfs.Exp})
-	}
+	// for _, ipfs := range tx.Ipfs {
+	// 	ipfsList = append(ipfsList, TXIpfs{ipfs.PubKeyOwner, ipfs.SignatureFile, ipfs.IpfsHash, ipfs.PubKeyHash, ipfs.Exp})
+	// }
 	txCopy := Transaction{tx.ID, ipfsList, inputs, outputs}
 
 	return txCopy
