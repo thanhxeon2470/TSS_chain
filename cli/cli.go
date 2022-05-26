@@ -17,10 +17,10 @@ func (cli *CLI) printUsage() {
 	fmt.Println("  createblockchain -address ADDRESS #-# Create a blockchain and send genesis block reward to ADDRESS")
 	fmt.Println("  createwallet #-# Generates a new key-pair and saves it into the wallet file")
 	fmt.Println("  getbalance -address ADDRESS #-# Get balance of ADDRESS")
-	// fmt.Println("  listaddresses - Lists all addresses from the wallet file")
+	fmt.Println("  findipfs -ipfshash IPFSHASH #-# all addresses is allowed access ipfs")
 	fmt.Println("  printchain #-# Print all the blocks of the blockchain")
 	fmt.Println("  reindexutxo #-# Rebuilds the UTXO set")
-	fmt.Println("  send -from FROM -to TO -amount AMOUNT -allowuser ADDRESS -ipfshas IPFSHASH -mine #-# Send AMOUNT of coins from FROM address to TO. Mine on the same node, when -mine is set.")
+	fmt.Println("  send -from FROM -to TO -amount AMOUNT -allowuser ADDRESS -ipfshash IPFSHASH -mine #-# Send AMOUNT of coins from FROM address to TO. Mine on the same node, when -mine is set.")
 	fmt.Println("  startnode -miner ADDRESS -storageminer ADDRESS #-# Start a node -miner enables mining")
 }
 
@@ -44,7 +44,7 @@ func (cli *CLI) Run() {
 	createBlockchainCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
 	createWalletCmd := flag.NewFlagSet("createwallet", flag.ExitOnError)
 	// addWalletCmd := flag.NewFlagSet("addwallet", flag.ExitOnError)
-	// listAddressesCmd := flag.NewFlagSet("listaddresses", flag.ExitOnError)
+	findIPFSCmd := flag.NewFlagSet("findipfs", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
 	reindexUTXOCmd := flag.NewFlagSet("reindexutxo", flag.ExitOnError)
 	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
@@ -55,6 +55,7 @@ func (cli *CLI) Run() {
 
 	createBlockchainAddress := createBlockchainCmd.String("address", "", "The address to send genesis block reward to")
 
+	findIPFSHash := findIPFSCmd.String("ipfshash", "", "Hash file of IPFS")
 	sendFrom := sendCmd.String("from", "", "Source wallet private key")
 	sendTo := sendCmd.String("to", "", "Destination wallet address")
 	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
@@ -90,12 +91,11 @@ func (cli *CLI) Run() {
 	// 	if err != nil {
 	// 		log.Panic(err)
 	// 	}
-	// case "listaddresses":
-
-	// 	err := listAddressesCmd.Parse(os.Args[2:])
-	// 	if err != nil {
-	// 		log.Panic(err)
-	// 	}
+	case "findipfs":
+		err := findIPFSCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
 	case "printchain":
 		err := printChainCmd.Parse(os.Args[2:])
 		if err != nil {
@@ -150,9 +150,13 @@ func (cli *CLI) Run() {
 		cli.CreateWallet()
 	}
 
-	// if listAddressesCmd.Parsed() {
-	// 	cli.listAddresses(nodeID)
-	// }
+	if findIPFSCmd.Parsed() {
+		if *findIPFSHash == "" {
+			findIPFSCmd.Usage()
+			os.Exit(1)
+		}
+		cli.FindIPFS(*findIPFSHash)
+	}
 
 	if printChainCmd.Parsed() {
 		cli.PrintChain()

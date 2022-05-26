@@ -14,8 +14,8 @@ import (
 	"golang.org/x/crypto/ripemd160"
 )
 
-const version = byte(0x00)
-const addressChecksumLen = 4
+const Version = byte(0x00)
+const AddressChecksumLen = 4
 
 // Wallet stores private and public keys
 type Wallet struct {
@@ -35,8 +35,8 @@ func NewWallet() (*Wallet, error) {
 func (w Wallet) GetAddress() []byte {
 	pubKeyHash := HashPubKey(w.PublicKey)
 
-	versionedPayload := append([]byte{version}, pubKeyHash...)
-	checksum := checksum(versionedPayload)
+	versionedPayload := append([]byte{Version}, pubKeyHash...)
+	checksum := Checksum(versionedPayload)
 
 	fullPayload := append(versionedPayload, checksum...)
 	address := utils.Base58Encode(fullPayload)
@@ -83,20 +83,20 @@ func DecodePrivKey(encoded []byte) *Wallet {
 // ValidateAddress check if address if valid
 func ValidateAddress(address string) bool {
 	pubKeyHash := utils.Base58Decode([]byte(address))
-	actualChecksum := pubKeyHash[len(pubKeyHash)-addressChecksumLen:]
+	actualChecksum := pubKeyHash[len(pubKeyHash)-AddressChecksumLen:]
 	version := pubKeyHash[0]
-	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-addressChecksumLen]
-	targetChecksum := checksum(append([]byte{version}, pubKeyHash...))
+	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-AddressChecksumLen]
+	targetChecksum := Checksum(append([]byte{version}, pubKeyHash...))
 
 	return bytes.Compare(actualChecksum, targetChecksum) == 0
 }
 
 // Checksum generates a checksum for a public key
-func checksum(payload []byte) []byte {
+func Checksum(payload []byte) []byte {
 	firstSHA := sha256.Sum256(payload)
 	secondSHA := sha256.Sum256(firstSHA[:])
 
-	return secondSHA[:addressChecksumLen]
+	return secondSHA[:AddressChecksumLen]
 }
 
 func newKeyPair() (ecdsa.PrivateKey, []byte) {

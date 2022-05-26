@@ -2,10 +2,13 @@ package blockchain
 
 import (
 	// "github.com/thanhxeon2470/TSS_chain/blockchain"
+	"bytes"
 	"encoding/hex"
 	"log"
 
 	"github.com/boltdb/bolt"
+	"github.com/thanhxeon2470/TSS_chain/utils"
+	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
 const FtxBucket = "filealive"
@@ -49,6 +52,51 @@ func (f FTXset) FindFTX(pubKeyHash []byte) map[string]InfoIPFS {
 	}
 	return listFTX
 
+}
+
+//FindIPFS to find user allow and owner of this hash file
+func (f FTXset) FindIPFS(ipfsHash string) map[string]bool {
+	listUserAllow := make(map[string]bool)
+	db := f.Blockchain.DB
+	err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(FtxBucket))
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			ipfsList := DeserializeIPFS(v)
+
+			for _, ipfs := range ipfsList.TXIpfsList {
+				if ipfs.IpfsHash == ipfsHash {
+					for _, userPubKeyHash := range ipfs.PubKeyHash {
+						versionedPayload := append([]byte{wallet.Version}, userPubKeyHash...)
+						checksum := wallet.Checksum(versionedPayload)
+
+						fullPayload := append(versionedPayload, checksum...)
+						address := utils.Base58Encode(fullPayload)
+						author := false
+						if bytes.Compare(wallet.HashPubKey(ipfs.PubKeyOwner), userPubKeyHash) == 0 {
+							author = true
+						}
+						listUserAllow[string(address)] = author
+					}
+				}
+				// if ipfs.IsLockedWithKey(pubKeyHash) {
+				// 	if ipfs.IsOwner(pubKeyHash) {
+				// 		listFTX[ipfs.IpfsHash] = InfoIPFS{true, ipfs.Exp}
+				// 	} else {
+				// 		listFTX[ipfs.IpfsHash] = InfoIPFS{false, ipfs.Exp}
+				// 	}
+				// }
+			}
+
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+	return listUserAllow
 }
 
 func (f FTXset) ReindexFTX() {

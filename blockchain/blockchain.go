@@ -267,12 +267,6 @@ func (bc *Blockchain) FindFTX() map[string]TXIpfsList {
 
 			// ipfsList:
 			for _, ipfs := range tx.Ipfs {
-				// Was the output spent?
-				// for _, spentOutIdx := range spentTXOs[txID] {
-				// 	if spentOutIdx == i {
-				// 		// continue ipfsList
-				// 	}
-				// }
 				if ipfs.Exp > time.Now().Unix() {
 					ipfsList := FTX[txID]
 					ipfsList.TXIpfsList = append(ipfsList.TXIpfsList, ipfs)
