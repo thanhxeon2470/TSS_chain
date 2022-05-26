@@ -246,7 +246,7 @@ func (u UTXOSet) UpdateFromTX(txDB *Transaction) bool {
 		return nil
 	})
 	if err != nil {
-		log.Panic(err)
+		// log.Panic(err)
 		return false
 	}
 	return true
