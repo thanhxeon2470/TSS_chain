@@ -220,7 +220,6 @@ func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
 
 	for {
 		block := bci.Next()
-
 		for _, tx := range block.Transactions {
 			txID := hex.EncodeToString(tx.ID)
 
@@ -260,7 +259,6 @@ func (bc *Blockchain) FindUTXO() map[string]TXOutputs {
 func (bc *Blockchain) FindFTX() map[string]TXIpfsList {
 	FTX := make(map[string]TXIpfsList)
 	bci := bc.Iterator()
-
 	for {
 		block := bci.Next()
 
@@ -283,12 +281,6 @@ func (bc *Blockchain) FindFTX() map[string]TXIpfsList {
 
 			}
 
-			// if tx.IsCoinbase() == false {
-			// 	for _, in := range tx.Vin {
-			// 		inTxID := hex.EncodeToString(in.Txid)
-			// 		spentTXOs[inTxID] = append(spentTXOs[inTxID], in.Vout)
-			// 	}
-			// }
 		}
 
 		if len(block.PrevBlockHash) == 0 {

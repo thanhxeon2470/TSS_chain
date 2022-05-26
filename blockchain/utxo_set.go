@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"encoding/hex"
+	"errors"
 	"log"
 
 	"github.com/boltdb/bolt"
@@ -192,7 +193,7 @@ func (u UTXOSet) Update(block *Block) {
 	}
 }
 
-func (u UTXOSet) UpdateFromTX(txDB *Transaction) {
+func (u UTXOSet) UpdateFromTX(txDB *Transaction) bool {
 	db := u.Blockchain.DB
 
 	err := db.Update(func(tx *bolt.Tx) error {
@@ -203,6 +204,9 @@ func (u UTXOSet) UpdateFromTX(txDB *Transaction) {
 			for _, vin := range txDB.Vin {
 				updatedOuts := TXOutputs{}
 				outsBytes := b.Get(vin.Txid)
+				if outsBytes == nil {
+					return errors.New("1")
+				}
 				outs := DeserializeOutputs(outsBytes)
 
 				for outIdx, out := range outs.Outputs {
@@ -220,6 +224,7 @@ func (u UTXOSet) UpdateFromTX(txDB *Transaction) {
 					err := b.Put(vin.Txid, updatedOuts.Serialize())
 					if err != nil {
 						log.Panic(err)
+						return err
 					}
 				}
 
@@ -234,6 +239,7 @@ func (u UTXOSet) UpdateFromTX(txDB *Transaction) {
 		err := b.Put(txDB.ID, newOutputs.Serialize())
 		if err != nil {
 			log.Panic(err)
+			return err
 		}
 		// }
 
@@ -241,5 +247,7 @@ func (u UTXOSet) UpdateFromTX(txDB *Transaction) {
 	})
 	if err != nil {
 		log.Panic(err)
+		return false
 	}
+	return true
 }

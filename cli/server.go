@@ -422,57 +422,62 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 	tx := blockchain.DeserializeTransaction(txData)
 	mempool[hex.EncodeToString(tx.ID)] = tx
 
-	UTXO := blockchain.UTXOSet{bc}
-	UTXO.UpdateFromTX(&tx)
-
 	if addrLocal == knownNodes[0] {
 		for _, node := range knownNodes {
 			if node != addrLocal && node != addrFrom {
 				sendInv(node, "tx", [][]byte{tx.ID})
 			}
 		}
-	} else {
-		if len(mempool) >= 2 && len(miningAddress) > 0 {
-		MineTransactions:
-			var txs []*blockchain.Transaction
+	}
 
-			for id := range mempool {
-				tx := mempool[id]
-				if bc.VerifyTransaction(&tx) {
+	if len(mempool) >= 2 && len(miningAddress) > 0 {
+	MineTransactions:
+		var txs []*blockchain.Transaction
+
+		for id := range mempool {
+			tx := mempool[id]
+			if bc.VerifyTransaction(&tx) {
+				UTXO := blockchain.UTXOSet{bc}
+				if UTXO.UpdateFromTX(&tx) {
 					txs = append(txs, &tx)
+
+				} else {
+					txID := hex.EncodeToString(tx.ID)
+					delete(mempool, txID)
 				}
 			}
+		}
 
-			if len(txs) == 0 {
-				fmt.Println("All transactions are invalid! Waiting for new ones...")
-				return
-			}
+		if len(txs) == 0 {
+			fmt.Println("All transactions are invalid! Waiting for new ones...")
+			return
+		}
 
-			cbTx := blockchain.NewCoinbaseTX(miningAddress, "")
-			txs = append(txs, cbTx)
+		cbTx := blockchain.NewCoinbaseTX(miningAddress, "")
+		txs = append(txs, cbTx)
 
-			newBlock := bc.MineBlock(txs)
-			UTXOSet := blockchain.UTXOSet{bc}
-			FTXSet := blockchain.FTXset{bc}
-			UTXOSet.Reindex()
-			FTXSet.ReindexFTX()
+		newBlock := bc.MineBlock(txs)
+		UTXOSet := blockchain.UTXOSet{bc}
+		FTXSet := blockchain.FTXset{bc}
+		UTXOSet.Reindex()
+		FTXSet.ReindexFTX()
 
-			fmt.Println("New block is mined!")
+		fmt.Println("New block is mined!")
 
-			for _, tx := range txs {
-				txID := hex.EncodeToString(tx.ID)
-				delete(mempool, txID)
-			}
+		for _, tx := range txs {
+			txID := hex.EncodeToString(tx.ID)
+			delete(mempool, txID)
+		}
 
-			for _, node := range knownNodes {
-				sendInv(node, "block", [][]byte{newBlock.Hash})
-			}
+		for _, node := range knownNodes {
+			sendInv(node, "block", [][]byte{newBlock.Hash})
+		}
 
-			if len(mempool) > 0 {
-				goto MineTransactions
-			}
+		if len(mempool) > 0 {
+			goto MineTransactions
 		}
 	}
+
 }
 
 func handleVersion(request []byte, bc *blockchain.Blockchain, addrFrom string) {
