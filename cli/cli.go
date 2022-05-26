@@ -176,8 +176,14 @@ func (cli *CLI) Run() {
 
 	if sendContentCmd.Parsed() {
 
-		alwuser := strings.Split(*sendContentAllow, "_")
-		cli.SendProposal(*sendContentFrom, *sendContentTo, *sendContentAmount, alwuser, *sendContentIPFShash)
+		alwusers := strings.Split(*sendContentAllow, "_")
+		var alwusers_copy []string
+		for _, user := range alwusers {
+			if user != "" {
+				alwusers_copy = append(alwusers_copy, user)
+			}
+		}
+		cli.SendProposal(*sendContentFrom, *sendContentTo, *sendContentAmount, alwusers_copy, *sendContentIPFShash)
 	}
 
 	if startNodeCmd.Parsed() {
