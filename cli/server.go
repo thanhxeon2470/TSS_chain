@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/helper"
@@ -28,7 +29,10 @@ var proposalCheck = false
 var randomIdentity = 0
 var knownNodes = []string{}
 var blocksInTransit = [][]byte{}
+
 var mempool = make(map[string]blockchain.Transaction)
+var timeStartnode = time.Now().Unix()
+var timeMining int64 = 30 // 30s
 
 type addr struct {
 	AddrList []string
@@ -429,8 +433,9 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 			}
 		}
 	}
-
-	if len(mempool) >= 2 && len(miningAddress) > 0 {
+	timeNow := time.Now().Unix()
+	if len(mempool) >= 1 && len(miningAddress) > 0 && timeNow-timeStartnode > timeMining {
+		timeStartnode = timeNow
 	MineTransactions:
 		var txs []*blockchain.Transaction
 
