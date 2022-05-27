@@ -434,7 +434,7 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 		}
 	}
 	timeNow := time.Now().Unix()
-	if len(mempool) >= 1 && len(miningAddress) > 0 && timeNow-timeStartnode > timeMining {
+	if len(mempool) >= 3 && len(miningAddress) > 0 && timeNow-timeStartnode > timeMining {
 		timeStartnode = timeNow
 	MineTransactions:
 		var txs []*blockchain.Transaction
