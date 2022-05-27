@@ -17,7 +17,7 @@ import (
 const dbFile = "blockchain.db"
 const dbFileGenesis = "blockchain_genesis.db"
 const blocksBucket = "blocks"
-const genesisCoinbaseData = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks"
+const genesisCoinbaseData = "The Times April 30th 2022. Blockchain for Thesis Storage System chain - TSS"
 
 // Blockchain implements interactions with a DB
 type Blockchain struct {
@@ -34,7 +34,7 @@ func CreateBlockchain(address string) *Blockchain {
 
 	var tip []byte
 
-	cbtx := NewCoinbaseTX(address, genesisCoinbaseData)
+	cbtx := NewCoinbaseTXGenesis(address, genesisCoinbaseData)
 	genesis := NewGenesisBlock(cbtx)
 
 	db, err := bolt.Open(dbFile, 0600, nil)

@@ -206,6 +206,26 @@ func NewCoinbaseTX(to, data string) *Transaction {
 	return &tx
 }
 
+// Coinbase Transaction for blockchain genesis, This is network liquidity
+func NewCoinbaseTXGenesis(to, data string) *Transaction {
+	if data == "" {
+		randData := make([]byte, 20)
+		_, err := rand.Read(randData)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		data = fmt.Sprintf("%x", randData)
+	}
+
+	txin := TXInput{[]byte{}, -1, nil, []byte(data)}
+	txout := NewTXOutput(10000, to)
+	tx := Transaction{nil, nil, []TXInput{txin}, []TXOutput{*txout}}
+	tx.ID = tx.Hash()
+
+	return &tx
+}
+
 // NewUTXOTransaction creates a new transaction
 func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddresses []string, ipfsHash string, UTXOSet *UTXOSet) *Transaction {
 	var inputs []TXInput
