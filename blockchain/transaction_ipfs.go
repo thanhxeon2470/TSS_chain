@@ -11,7 +11,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/thanhxeon2470/TSS_chain/utils"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
@@ -25,26 +24,16 @@ type TXIpfs struct {
 }
 
 // Lock signs the ipfs hash
-func (t *TXIpfs) Lock(addresses [][]byte) {
-	for _, addr := range addresses {
-		pubKeyHash := utils.Base58Decode(addr)
-		pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
-		t.PubKeyHash = append(t.PubKeyHash, pubKeyHash)
-	}
-}
+// func (t *TXIpfs) Lock(addresses [][]byte) {
+// 	for _, addr := range addresses {
+// 		pubKeyHash := utils.Base58Decode(addr)
+// 		pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
+// 		t.PubKeyHash = append(t.PubKeyHash, pubKeyHash)
+// 	}
+// }
 
 // IsLockedWithKey checks if the ipfs hash can be used by the owner of the pubkey
 func (t *TXIpfs) IsLockedWithKey(pubKeyHash []byte) bool {
-	pubKeyOwnerHash := wallet.HashPubKey(t.PubKeyOwner)
-
-	if bytes.Equal(pubKeyOwnerHash, pubKeyHash) {
-		return true
-	}
-	return false
-}
-
-// IsOwner check the the author
-func (t *TXIpfs) IsOwner(pubKeyHash []byte) bool {
 	for _, hash := range t.PubKeyHash {
 		if bytes.Compare(hash, pubKeyHash) == 0 {
 			return true
@@ -53,16 +42,27 @@ func (t *TXIpfs) IsOwner(pubKeyHash []byte) bool {
 	return false
 }
 
-// NewTXIpfs create a new TXIpfs
-func NewTXIpfs(pubKeyOwner string, signatureFile []byte, ipfsHash string, addresses []string) *TXIpfs {
-	txi := &TXIpfs{[]byte(pubKeyOwner), signatureFile, ipfsHash, nil, time.Now().Unix() + 31536000} // exp 1 year
-	var addressesByte [][]byte
-	for _, address := range addresses {
-		if wallet.ValidateAddress(address) {
-			addressesByte = append(addressesByte, []byte(address))
-		}
+// IsOwner check the the author
+func (t *TXIpfs) IsOwner(pubKeyHash []byte) bool {
+	pubKeyOwnerHash := wallet.HashPubKey(t.PubKeyOwner)
+
+	if bytes.Equal(pubKeyOwnerHash, pubKeyHash) {
+		return true
 	}
-	txi.Lock(addressesByte)
+	return false
+
+}
+
+// NewTXIpfs create a new TXIpfs
+func NewTXIpfs(pubKeyOwner string, signatureFile []byte, ipfsHash string, pubKeyHashAllows [][]byte) *TXIpfs {
+	txi := &TXIpfs{[]byte(pubKeyOwner), signatureFile, ipfsHash, pubKeyHashAllows, time.Now().Unix() + 31536000} // exp 1 year
+	// var addressesByte [][]byte
+	// for _, address := range addresses {
+	// 	if wallet.ValidateAddress(address) {
+	// 		addressesByte = append(addressesByte, []byte(address))
+	// 	}
+	// }
+	// txi.Lock(addressesByte)
 
 	return txi
 }

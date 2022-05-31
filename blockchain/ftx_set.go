@@ -2,7 +2,7 @@ package blockchain
 
 import (
 	// "github.com/thanhxeon2470/TSS_chain/blockchain"
-	"bytes"
+
 	"encoding/hex"
 	"log"
 
@@ -74,11 +74,18 @@ func (f FTXset) FindIPFS(ipfsHash string) map[string]bool {
 						fullPayload := append(versionedPayload, checksum...)
 						address := utils.Base58Encode(fullPayload)
 						author := false
-						if bytes.Compare(wallet.HashPubKey(ipfs.PubKeyOwner), userPubKeyHash) == 0 {
-							author = true
-						}
+
 						listUserAllow[string(address)] = author
 					}
+					pubKeyHash := wallet.HashPubKey(ipfs.PubKeyOwner)
+
+					versionedPayload := append([]byte{wallet.Version}, pubKeyHash...)
+					checksum := wallet.Checksum(versionedPayload)
+
+					fullPayload := append(versionedPayload, checksum...)
+					address := utils.Base58Encode(fullPayload)
+					listUserAllow[string(address)] = true
+
 				}
 				// if ipfs.IsLockedWithKey(pubKeyHash) {
 				// 	if ipfs.IsOwner(pubKeyHash) {

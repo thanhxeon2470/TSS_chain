@@ -137,7 +137,7 @@ func sendData(addr string, data []byte) {
 		fmt.Printf("%s is not available\n", addr)
 		var updatedNodes []string
 
-		for _, node := range knownNodes {
+		for _, node := range knownNodes[1:] {
 			if node != addr {
 				updatedNodes = append(updatedNodes, node)
 			}
@@ -557,7 +557,7 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 
 // StartServer starts a node
 func StartServer(minerAddress string) {
-	knownNodes = append(knownNodes, os.Getenv("KNOWNNODE"))
+	knownNodes = strings.Split(os.Getenv("KNOWNNODE"), "_")
 	miningAddress = minerAddress
 	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
 	ln, err := net.Listen(protocol, port)

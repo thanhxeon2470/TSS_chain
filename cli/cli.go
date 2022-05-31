@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"strings"
 
 	"os"
 )
@@ -63,7 +62,7 @@ func (cli *CLI) Run() {
 
 	sendContentFrom := sendContentCmd.String("from", "", "Source wallet private key")
 	sendContentTo := sendContentCmd.String("to", "", "Destination wallet address")
-	sendContentAllow := sendContentCmd.String("allowuser", "", "These user can access to this file")
+	// sendContentAllow := sendContentCmd.String("allowuser", "", "These user can access to this file")
 	sendContentIPFShash := sendContentCmd.String("ipfshash", "", "Hash file of IPFS")
 	sendContentAmount := sendContentCmd.Int("amount", 0, "Amount to send")
 
@@ -176,14 +175,14 @@ func (cli *CLI) Run() {
 
 	if sendContentCmd.Parsed() {
 
-		alwusers := strings.Split(*sendContentAllow, "_")
-		var alwusers_copy []string
-		for _, user := range alwusers {
-			if user != "" {
-				alwusers_copy = append(alwusers_copy, user)
-			}
-		}
-		cli.SendProposal(*sendContentFrom, *sendContentTo, *sendContentAmount, alwusers_copy, *sendContentIPFShash)
+		// alwusers := strings.Split(*sendContentAllow, "_")
+		// var alwusers_copy []string
+		// for _, user := range alwusers {
+		// 	if user != "" {
+		// 		alwusers_copy = append(alwusers_copy, user)
+		// 	}
+		// }
+		cli.SendProposal(*sendContentFrom, *sendContentTo, *sendContentAmount, *sendContentIPFShash)
 	}
 
 	if startNodeCmd.Parsed() {

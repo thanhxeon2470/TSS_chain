@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
@@ -50,7 +51,7 @@ func (cli *CLI) Send(prkFrom, to string, amount int, mineNow bool) bool {
 
 			return false
 		}
-		sendTx(os.Getenv("KNOWNNODE"), tx)
+		sendTx(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], tx)
 	}
 
 	fmt.Println("Success!")

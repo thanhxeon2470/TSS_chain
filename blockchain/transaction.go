@@ -227,7 +227,7 @@ func NewCoinbaseTXGenesis(to, data string) *Transaction {
 }
 
 // NewUTXOTransaction creates a new transaction
-func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddresses []string, ipfsHash string, UTXOSet *UTXOSet) *Transaction {
+func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, pubKeyHashAllow []byte, ipfsHash string, UTXOSet *UTXOSet) *Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
 	var ipfsList []TXIpfs
@@ -263,8 +263,14 @@ func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, allowaddresses 
 	// Build a list of ipfs
 
 	if ipfsHash != "" {
-		allowaddresses = append(allowaddresses, string(w.GetAddress()))
-		ipfsList = append(ipfsList, *NewTXIpfs(string(w.PublicKey), nil, ipfsHash, allowaddresses))
+		var pubKeyHashAllows [][]byte
+		if pubKeyHashAllow != nil {
+			pubKeyHashAllows = append(pubKeyHashAllows, pubKeyHashAllow)
+		} else {
+			pubKeyHashAllows = append(pubKeyHashAllows, wallet.HashPubKey(w.PublicKey))
+
+		}
+		ipfsList = append(ipfsList, *NewTXIpfs(string(w.PublicKey), nil, ipfsHash, pubKeyHashAllows))
 		// ipfsList[0].SignIPFS(w.PrivateKey)
 	}
 
