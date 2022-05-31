@@ -14,12 +14,13 @@ import (
 	"strings"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
+	"github.com/thanhxeon2470/TSS_chain/utils"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 
 	"github.com/ethereum/go-ethereum/crypto/ecies"
 )
 
-func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iHashEncode []byte) []byte {
+func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iHashEncode string) string {
 	// if !wallet.ValidateAddress(prkFrom) {
 	// 	log.Panic("ERROR: Sender address is not valid")
 	// }
@@ -37,53 +38,54 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 	UTXOSet := blockchain.UTXOSet{bc}
 
 	curve := elliptic.P256()
-	pubKey, err := hex.DecodeString(pubkeyallowuser)
-	if err != nil {
-		return nil
-	}
+	pubKey := utils.Base58Decode([]byte(pubkeyallowuser))
 
 	// Decode to get hash file
 	priKey := ecies.ImportECDSA(&w.PrivateKey)
-	iHash, err := priKey.Decrypt(iHashEncode, nil, nil)
+	ifh, err := hex.DecodeString(iHashEncode)
+	if err != nil {
+		return ""
+	}
+	iHash, err := priKey.Decrypt(ifh, nil, nil)
 	var newIHash string = ""
 	getCMD := exec.Command("ipfs", "get", string(iHash))
 	stdout, err := getCMD.Output()
 	if err != nil {
-		return nil
+		return ""
 	}
 	str := string(stdout)
 	if strings.Contains(str, string(iHash)) {
 		source, err := os.Open(string(iHash))
 		if err != nil {
-			return nil
+			return ""
 		}
 		defer source.Close()
 
 		destination, err := os.Create(string(iHash) + "copy")
 		if err != nil {
-			return nil
+			return ""
 		}
 		buf := make([]byte, 1024)
 		for {
 			n, err := source.Read(buf)
 			if err != nil && err != io.EOF {
-				return nil
+				return ""
 			}
 			if n == 0 {
 				if _, err := destination.Write(pubKey); err != nil {
-					return nil
+					return ""
 				}
 				break
 			}
 
 			if _, err := destination.Write(buf[:n]); err != nil {
-				return nil
+				return ""
 			}
 		}
 		getCMD := exec.Command("ipfs", "add", string(iHash)+"copy")
 		stdout, err := getCMD.Output()
 		if err != nil {
-			return nil
+			return ""
 		}
 		str := string(stdout)
 		if strings.Contains(str, "added") {
@@ -100,12 +102,12 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 		// }
 	} else {
 		fmt.Print("Cant get file from ipfs")
-		return nil
+		return ""
 	}
 
 	// Encode to new allow user
 	if newIHash != "" {
-		return nil
+		return ""
 	} else {
 		x := big.Int{}
 		y := big.Int{}
@@ -118,19 +120,19 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 
 		ct, err := ecies.Encrypt(rand.Reader, pubECIES, []byte(newIHash), nil, nil)
 		if err != nil {
-			return nil
+			return ""
 		}
 		pubKeyHash := wallet.HashPubKey(append(rawPubKey.X.Bytes(), rawPubKey.Y.Bytes()...))
 		tx := blockchain.NewUTXOTransaction(w, to, amount, pubKeyHash, hex.EncodeToString(ct), &UTXOSet)
 		if tx == nil {
 			fmt.Println("Fail to create transaction!")
 
-			return nil
+			return ""
 		}
 		proposal := proposal{tx.ID, []byte(to), []byte(newIHash), amount}
 		sendProposal(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], proposal)
 		sendTx("127.0.0.1:3000", tx)
 
-		return ct
+		return hex.EncodeToString(ct)
 	}
 }

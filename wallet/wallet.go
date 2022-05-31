@@ -63,6 +63,10 @@ func EncodePrivKey(privKey ecdsa.PrivateKey) []byte {
 	return utils.Base58Encode(privKey.D.Bytes())
 }
 
+func EncodePubkey(pubkey []byte) []byte {
+	return utils.Base58Encode(pubkey)
+}
+
 // Private Key decoder
 func DecodePrivKey(encoded []byte) *Wallet {
 	// Decode base58

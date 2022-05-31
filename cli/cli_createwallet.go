@@ -11,8 +11,9 @@ func (cli *CLI) CreateWallet() ([]byte, []byte, []byte) {
 	address := w.GetAddress()
 
 	prk := wallet.EncodePrivKey(w.PrivateKey)
+	pub := wallet.EncodePubkey(w.PublicKey)
 	fmt.Printf("Your TSS private key should be kept a secret. Whomever you share the private key with has access to spend all the bitcoins associated with that address.\n Your new address: %s\n Your private key: %s\n", address, prk)
-	return address, w.PublicKey, prk
+	return address, pub, prk
 }
 
 func (cli *CLI) AddWallet(priKey []byte) []byte {
