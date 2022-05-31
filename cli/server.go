@@ -237,6 +237,10 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 				if !strings.Contains(str, "added") {
 					fmt.Print("Cant add file to ipfs")
 				}
+				err = os.Remove(fh)
+				if err != nil {
+					return
+				}
 			} else {
 				fmt.Print("Cant get file from ipfs")
 			}
@@ -433,6 +437,10 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 			}
 		}
 	}
+
+}
+
+func MiningBlock(bc *blockchain.Blockchain) {
 	timeNow := time.Now().Unix()
 	if len(mempool) >= 3 && len(miningAddress) > 0 && timeNow-timeStartnode > timeMining {
 		timeStartnode = timeNow
@@ -482,7 +490,6 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 			goto MineTransactions
 		}
 	}
-
 }
 
 func handleVersion(request []byte, bc *blockchain.Blockchain, addrFrom string) {
@@ -598,6 +605,8 @@ func StartServer(minerAddress string) {
 			log.Panic(err)
 		}
 		go handleConnection(conn, bc)
+
+		MiningBlock(bc)
 	}
 }
 

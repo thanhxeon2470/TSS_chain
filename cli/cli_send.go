@@ -44,6 +44,7 @@ func (cli *CLI) Send(prkFrom, to string, amount int, mineNow bool) bool {
 		FTX.UpdateFTX(newBlock)
 	} else {
 		bc := blockchain.NewBlockchainView()
+		defer bc.DB.Close()
 		UTXOSet := blockchain.UTXOSet{bc}
 		tx := blockchain.NewUTXOTransaction(w, to, amount, nil, "", &UTXOSet)
 		if tx == nil {

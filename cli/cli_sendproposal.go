@@ -30,6 +30,7 @@ func (cli *CLI) SendProposal(prkFrom, to string, amount int, iHash string) strin
 	w := wallet.DecodePrivKey([]byte(prkFrom))
 
 	bc := blockchain.NewBlockchainView()
+	defer bc.DB.Close()
 	UTXOSet := blockchain.UTXOSet{bc}
 
 	prkECIES := ecies.ImportECDSA(&w.PrivateKey)

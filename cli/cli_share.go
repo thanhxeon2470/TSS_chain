@@ -35,6 +35,8 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 	w := wallet.DecodePrivKey([]byte(prkFrom))
 
 	bc := blockchain.NewBlockchainView()
+	defer bc.DB.Close()
+
 	UTXOSet := blockchain.UTXOSet{bc}
 
 	curve := elliptic.P256()
