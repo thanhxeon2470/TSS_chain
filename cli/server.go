@@ -275,12 +275,15 @@ func handleFeedback(request []byte, addrFrom, addrLocal string) {
 				sendFBProposal(node, payload.TxHash, payload.Accept)
 			}
 		}
-	} else if len(mempool) > 0 {
+	}
+	if len(mempool) > 0 {
 		// When received feedback proposal =>>> check this and send transaction
 		for id := range mempool {
 			if id == hex.EncodeToString(payload.TxHash) {
 				tx := mempool[id]
 				sendTx(knownNodes[0], &tx)
+				delete(mempool, id)
+
 			}
 		}
 	}
