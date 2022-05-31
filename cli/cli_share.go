@@ -103,7 +103,7 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 		return nil
 	}
 
-	// Encode to new apllow user
+	// Encode to new allow user
 	if newIHash != "" {
 		return nil
 	} else {
