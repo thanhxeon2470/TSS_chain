@@ -450,10 +450,11 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 // After 30s, if less than 3 txs block will be mined
 func MiningBlock(bc *blockchain.Blockchain, timeStart chan int64) {
 	t := <-timeStart
+	fmt.Println("Wait for mine...", t)
 	for {
-		fmt.Println("Wait for mine...", t)
 		timeNow := time.Now().Unix()
 		if len(miningAddress) > 0 && len(mempool) >= 1 && (len(mempool) >= 3 || timeNow-t > timeMining) {
+			fmt.Println("Mined...", timeNow)
 			timeStartnode <- time.Now().Unix()
 		MineTransactions:
 			var txs []*blockchain.Transaction
