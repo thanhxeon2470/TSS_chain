@@ -87,14 +87,14 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 			return ""
 		}
 
-		// err = os.Remove(string(iHash))
-		// if err != nil {
-		// 	return nil
-		// }
-		// err = os.Remove(string(iHash) + "copy")
-		// if err != nil {
-		// 	return nil
-		// }
+		err = os.Remove(string(iHash))
+		if err != nil {
+			return ""
+		}
+		err = os.Remove(string(iHash) + "copy")
+		if err != nil {
+			return ""
+		}
 	} else {
 		fmt.Print("Cant get file from ipfs")
 		return ""
