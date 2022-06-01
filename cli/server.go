@@ -441,9 +441,9 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 		}
 	}
 	// root lamf wallet app chua chuyen file di duocj
+	fmt.Println("Time receive tx...", <-timeStartnode)
 
 	timeStartnode <- time.Now().Unix()
-	fmt.Println("Time receive tx...", <-timeStartnode)
 
 }
 
