@@ -31,7 +31,7 @@ var knownNodes = []string{}
 var blocksInTransit = [][]byte{}
 
 var mempool = make(map[string]blockchain.Transaction)
-var timeStartnode = make(chan int64)
+var timeReceivedTx = make(chan int64)
 var timeMining int64 = 30 // 30s
 
 type addr struct {
@@ -443,7 +443,7 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 	// root lamf wallet app chua chuyen file di duocj
 	fmt.Println("Time receive tx...", time.Now().Unix())
 
-	timeStartnode <- time.Now().Unix()
+	timeReceivedTx <- time.Now().Unix()
 
 }
 
@@ -455,7 +455,6 @@ func MiningBlock(bc *blockchain.Blockchain, timeStart chan int64) {
 		timeNow := time.Now().Unix()
 		if len(miningAddress) > 0 && len(mempool) >= 1 && (len(mempool) >= 3 || timeNow-t > timeMining) {
 			fmt.Println("Mined...", timeNow)
-			timeStartnode <- time.Now().Unix()
 		MineTransactions:
 			var txs []*blockchain.Transaction
 
@@ -615,7 +614,7 @@ func StartServer(minerAddress string) {
 	}
 	if len(minerAddress) > 0 {
 		// timeStartnode <- time.Now().Unix()
-		go MiningBlock(bc, timeStartnode)
+		go MiningBlock(bc, timeReceivedTx)
 	}
 
 	for {
