@@ -611,6 +611,7 @@ func StartServer(minerAddress string) {
 		sendVersion(knownNodes[0], bc)
 	}
 	if len(minerAddress) > 0 {
+		timeStartnode <- time.Now().Unix()
 		go MiningBlock(bc, timeStartnode)
 	}
 
