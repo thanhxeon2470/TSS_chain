@@ -10,7 +10,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
@@ -220,22 +219,15 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 		if bytes.Compare(payload.StorageMiningAddress, []byte(StorageMiningAddress)) == 0 {
 			// Get file on ipfs
 			fh := string(payload.FileHash)
-			getCMD := exec.Command("ipfs", "get", fh)
-			stdout, err := getCMD.Output()
+			isSuccess, err := helper.IpfsGet(fh)
 			if err != nil {
 				return
 			}
-			str := string(stdout)
-			if strings.Contains(str, fh) {
+			if isSuccess {
 				// And update this file to ipfs cluster
-				addCMD := exec.Command("ipfs-cluster-ctl", "add", fh)
-				stdout, err := addCMD.Output()
+				_, err := helper.IpfsClusterAdd(fh)
 				if err != nil {
 					return
-				}
-				str := string(stdout)
-				if !strings.Contains(str, "added") {
-					fmt.Print("Cant add file to ipfs")
 				}
 				err = os.Remove(fh)
 				if err != nil {

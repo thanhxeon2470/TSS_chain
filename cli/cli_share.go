@@ -10,10 +10,10 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"os/exec"
 	"strings"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
+	"github.com/thanhxeon2470/TSS_chain/helper"
 	"github.com/thanhxeon2470/TSS_chain/utils"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 
@@ -50,13 +50,11 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 	}
 	iHash, err := priKey.Decrypt(ifh, nil, nil)
 	var newIHash string = ""
-	getCMD := exec.Command("ipfs", "get", string(iHash))
-	stdout, err := getCMD.Output()
+	isSuccess, err := helper.IpfsGet(string(iHash))
 	if err != nil {
 		return ""
 	}
-	str := string(stdout)
-	if strings.Contains(str, string(iHash)) {
+	if isSuccess {
 		source, err := os.Open(string(iHash))
 		if err != nil {
 			return ""
@@ -84,14 +82,9 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 				return ""
 			}
 		}
-		getCMD := exec.Command("ipfs", "add", string(iHash)+"copy")
-		stdout, err := getCMD.Output()
+		newIHash, err = helper.IpfsAdd(string(iHash) + "copy")
 		if err != nil {
 			return ""
-		}
-		str := string(stdout)
-		if strings.Contains(str, "added") {
-			newIHash = strings.Split(str, " ")[1]
 		}
 
 		// err = os.Remove(string(iHash))
@@ -108,7 +101,7 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 	}
 
 	// Encode to new allow user
-	if newIHash != "" {
+	if newIHash == "" {
 		return ""
 	} else {
 		x := big.Int{}
