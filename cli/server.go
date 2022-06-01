@@ -441,7 +441,7 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 		}
 	}
 	// root lamf wallet app chua chuyen file di duocj
-	fmt.Println("Time receive tx...", <-timeStartnode)
+	fmt.Println("Time receive tx...", time.Now().Unix())
 
 	timeStartnode <- time.Now().Unix()
 
@@ -449,10 +449,12 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 
 // After 30s, if less than 3 txs block will be mined
 func MiningBlock(bc *blockchain.Blockchain, timeStart chan int64) {
+	t := <-timeStart
 	for {
-		fmt.Println("Wait for mine...", <-timeStart)
+		fmt.Println("Wait for mine...", t)
 		timeNow := time.Now().Unix()
-		if len(miningAddress) > 0 && len(mempool) >= 1 && (len(mempool) >= 3 || timeNow-<-timeStart > timeMining) {
+		if len(miningAddress) > 0 && len(mempool) >= 1 && (len(mempool) >= 3 || timeNow-t > timeMining) {
+			timeStartnode <- time.Now().Unix()
 		MineTransactions:
 			var txs []*blockchain.Transaction
 
@@ -611,7 +613,7 @@ func StartServer(minerAddress string) {
 		sendVersion(knownNodes[0], bc)
 	}
 	if len(minerAddress) > 0 {
-		timeStartnode <- time.Now().Unix()
+		// timeStartnode <- time.Now().Unix()
 		go MiningBlock(bc, timeStartnode)
 	}
 
