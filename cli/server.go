@@ -31,7 +31,7 @@ var knownNodes = []string{}
 var blocksInTransit = [][]byte{}
 
 var mempool = make(map[string]blockchain.Transaction)
-var timeStartnode = time.Now().Unix()
+var timeStartnode = make(chan int64)
 var timeMining int64 = 30 // 30s
 
 type addr struct {
@@ -440,15 +440,18 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 			}
 		}
 	}
-	go MiningBlock(bc)
+	// root lamf wallet app chua chuyen file di duocj
+
+	timeStartnode <- time.Now().Unix()
 
 }
 
-func MiningBlock(bc *blockchain.Blockchain) {
-	timeNow := time.Now().Unix()
+// After 30s, if less than 3 txs block will be mined
+func MiningBlock(bc *blockchain.Blockchain, timeStart chan int64) {
 	for {
-		if len(miningAddress) > 0 && len(mempool) >= 3 && (len(mempool) >= 3 || timeNow-timeStartnode > timeMining) {
-			timeStartnode = timeNow
+		timeNow := time.Now().Unix()
+		if len(miningAddress) > 0 && len(mempool) >= 1 && (len(mempool) >= 3 || timeNow-<-timeStart > timeMining) {
+			timeStartnode <- timeNow
 		MineTransactions:
 			var txs []*blockchain.Transaction
 
@@ -605,6 +608,9 @@ func StartServer(minerAddress string) {
 
 	if dif == 0 {
 		sendVersion(knownNodes[0], bc)
+	}
+	if len(minerAddress) > 0 {
+		go MiningBlock(bc, timeStartnode)
 	}
 
 	for {
