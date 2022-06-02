@@ -42,12 +42,13 @@ func (cli *CLI) Run() {
 	getBalanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
 	createBlockchainCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
 	createWalletCmd := flag.NewFlagSet("createwallet", flag.ExitOnError)
-	// addWalletCmd := flag.NewFlagSet("addwallet", flag.ExitOnError)
-	findIPFSCmd := flag.NewFlagSet("findipfs", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
 	reindexUTXOCmd := flag.NewFlagSet("reindexutxo", flag.ExitOnError)
 	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
 	sendContentCmd := flag.NewFlagSet("sendcontent", flag.ExitOnError)
+	shareCmd := flag.NewFlagSet("share", flag.ExitOnError)
+	findIPFSCmd := flag.NewFlagSet("findipfs", flag.ExitOnError)
+	getIPFSCmd := flag.NewFlagSet("getipfs", flag.ExitOnError)
 	startNodeCmd := flag.NewFlagSet("startnode", flag.ExitOnError)
 
 	getBalanceAddress := getBalanceCmd.String("address", "", "The address to get balance for")
@@ -55,6 +56,7 @@ func (cli *CLI) Run() {
 	createBlockchainAddress := createBlockchainCmd.String("address", "", "The address to send genesis block reward to")
 
 	findIPFSHash := findIPFSCmd.String("ipfshash", "", "Hash file of IPFS")
+
 	sendFrom := sendCmd.String("from", "", "Source wallet private key")
 	sendTo := sendCmd.String("to", "", "Destination wallet address")
 	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
@@ -65,6 +67,15 @@ func (cli *CLI) Run() {
 	// sendContentAllow := sendContentCmd.String("allowuser", "", "These user can access to this file")
 	sendContentIPFShash := sendContentCmd.String("ipfshash", "", "Hash file of IPFS")
 	sendContentAmount := sendContentCmd.Int("amount", 0, "Amount to send")
+
+	shareFrom := shareCmd.String("from", "", "Source wallet private key")
+	shareTo := shareCmd.String("to", "", "Destination wallet address")
+	shareAmount := shareCmd.Int("amount", 0, "Amount to send (Fee pay for storage miner)")
+	sharePublicKey := shareCmd.String("publickey", "", "Public Key of user shared")
+	shareIpfsENC := shareCmd.String("ipfsenc", "", "Encode of IPFS")
+
+	getIpfsprik := getIPFSCmd.String("privatekey", "", "wallet private key to descript")
+	getIpfsENC := getIPFSCmd.String("ipfsenc", "", "Encode of IPFS")
 
 	startNodeMiner := startNodeCmd.String("miner", "", "Enable mining mode and send reward to ADDRESS")
 	startNodeStorageMiner := startNodeCmd.String("storageminer", "", "Enable storage mining mode and send reward to ADDRESS")
@@ -85,11 +96,6 @@ func (cli *CLI) Run() {
 		if err != nil {
 			log.Panic(err)
 		}
-	// case "addwallet":
-	// 	err := addWalletCmd.Parse(os.Args[2:])
-	// 	if err != nil {
-	// 		log.Panic(err)
-	// 	}
 	case "findipfs":
 		err := findIPFSCmd.Parse(os.Args[2:])
 		if err != nil {
@@ -112,6 +118,16 @@ func (cli *CLI) Run() {
 		}
 	case "sendcontent":
 		err := sendContentCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
+	case "share":
+		err := shareCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
+	case "getipfs":
+		err := getIPFSCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Panic(err)
 		}
@@ -174,17 +190,26 @@ func (cli *CLI) Run() {
 	}
 
 	if sendContentCmd.Parsed() {
-
-		// alwusers := strings.Split(*sendContentAllow, "_")
-		// var alwusers_copy []string
-		// for _, user := range alwusers {
-		// 	if user != "" {
-		// 		alwusers_copy = append(alwusers_copy, user)
-		// 	}
-		// }
+		if *sendContentFrom == "" || *sendContentTo == "" || *sendContentAmount <= 0 || *sendContentIPFShash == "" {
+			sendContentCmd.Usage()
+			os.Exit(1)
+		}
 		cli.SendProposal(*sendContentFrom, *sendContentTo, *sendContentAmount, *sendContentIPFShash)
 	}
-
+	if getIPFSCmd.Parsed() {
+		if *getIpfsprik == "" || *getIpfsENC == "" {
+			getIPFSCmd.Usage()
+			os.Exit(1)
+		}
+		cli.IPFSget(*getIpfsprik, *getIpfsENC)
+	}
+	if shareCmd.Parsed() {
+		if *shareFrom == "" || *shareTo == "" || *shareAmount <= 0 || *sharePublicKey == "" || *shareIpfsENC == "" {
+			shareCmd.Usage()
+			os.Exit(1)
+		}
+		cli.Share(*shareFrom, *shareTo, *shareAmount, *sharePublicKey, *shareIpfsENC)
+	}
 	if startNodeCmd.Parsed() {
 		StorageMiningAddress = *startNodeStorageMiner
 		cli.StartNode(*startNodeMiner)

@@ -49,6 +49,9 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 		return ""
 	}
 	iHash, err := priKey.Decrypt(ifh, nil, nil)
+	if err != nil {
+		return ""
+	}
 	var newIHash string = ""
 	isSuccess, err := helper.IpfsGet(string(iHash))
 	if err != nil {
