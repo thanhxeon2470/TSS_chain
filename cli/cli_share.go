@@ -129,7 +129,8 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 		}
 		proposal := proposal{tx.ID, []byte(to), []byte(newIHash), amount}
 		sendProposal(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], proposal)
-		sendTx("127.0.0.1:3000", tx)
+		sendto := fmt.Sprint("127.0.0.1:", os.Getenv("PORT"))
+		sendTx(sendto, tx)
 
 		return hex.EncodeToString(ct)
 	}

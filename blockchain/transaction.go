@@ -22,11 +22,10 @@ const subsidy = 10
 
 // Transaction represents a TSS coin transaction
 type Transaction struct {
-	ID        []byte
-	Ipfs      []TXIpfs
-	Vin       []TXInput
-	Vout      []TXOutput
-	Signature []byte
+	ID   []byte
+	Ipfs []TXIpfs
+	Vin  []TXInput
+	Vout []TXOutput
 }
 
 // IsCoinbase checks whether the transaction is coinbase
@@ -138,7 +137,7 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	// for _, ipfs := range tx.Ipfs {
 	// 	ipfsList = append(ipfsList, TXIpfs{ipfs.PubKeyOwner, ipfs.SignatureFile, ipfs.IpfsHash, ipfs.PubKeyHash, ipfs.Exp})
 	// }
-	txCopy := Transaction{tx.ID, ipfsList, inputs, outputs, tx.Signature}
+	txCopy := Transaction{tx.ID, ipfsList, inputs, outputs}
 
 	return txCopy
 }

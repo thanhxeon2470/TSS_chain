@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/hex"
+	"fmt"
 	"log"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
@@ -40,7 +41,7 @@ func (cli *CLI) GetTxIn(addr string, amount int) blockchain.TXInputs {
 			input := blockchain.TXInput{txID, out, nil, nil}
 			res.Inputs = append(res.Inputs, input)
 
-			// fmt.Println(hex.EncodeToString(txID), " ==== ", out)
+			fmt.Println(hex.EncodeToString(txID), " ==== ", out)
 		}
 	}
 

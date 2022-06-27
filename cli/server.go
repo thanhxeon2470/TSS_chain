@@ -15,6 +15,7 @@ import (
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/helper"
+	"github.com/thanhxeon2470/TSS_chain/rpc"
 )
 
 const protocol = "tcp"
@@ -452,22 +453,6 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 
 }
 
-func handleTxIns(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLocal string) {
-	var buff bytes.Buffer
-	var payload txin
-
-	buff.Write(request[commandLength:])
-	dec := gob.NewDecoder(&buff)
-	err := dec.Decode(&payload)
-	if err != nil {
-		log.Panic(err)
-	}
-
-	txData := payload.Inputs
-	txins := blockchain.DeserializeInputs(txData)
-
-}
-
 // After 30s, if less than 3 txs block will be mined
 func MiningBlock(bc *blockchain.Blockchain, timeStart chan int64) {
 	t := <-timeStart
@@ -608,6 +593,13 @@ func StartServer(minerAddress string) {
 	}
 	defer ln.Close()
 
+	portRPC := fmt.Sprintf(":%s", os.Getenv("PORT_RPC"))
+	lnRpc, err := net.Listen(protocol, portRPC)
+	if err != nil {
+		log.Panic(err)
+	}
+	defer lnRpc.Close()
+
 	bc := blockchain.NewBlockchain()
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
@@ -638,6 +630,8 @@ func StartServer(minerAddress string) {
 		go MiningBlock(bc, timeReceivedTx)
 	}
 
+	go handleRPC(lnRpc)
+
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -645,6 +639,16 @@ func StartServer(minerAddress string) {
 		}
 		go handleConnection(conn, bc)
 
+	}
+}
+
+func handleRPC(ln net.Listener) {
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			log.Panic(err)
+		}
+		go rpc.HandleRPC(conn)
 	}
 }
 

@@ -47,7 +47,8 @@ func (cli *CLI) SendProposal(prkFrom, to string, amount int, iHash string) strin
 	}
 	proposal := proposal{tx.ID, []byte(to), []byte(iHash), amount}
 	sendProposal(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], proposal)
-	sendTx("127.0.0.1:3000", tx)
+	sendto := fmt.Sprint("127.0.0.1:", os.Getenv("PORT"))
+	sendTx(sendto, tx)
 
 	return hex.EncodeToString(ct)
 }
