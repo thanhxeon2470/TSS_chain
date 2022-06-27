@@ -9,8 +9,8 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
 	"strings"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/utils"
@@ -46,22 +46,22 @@ type getdata struct {
 type findipfs struct {
 	IpfsHashENC []byte
 }
-type ipfs struct {
+type Ipfs struct {
 	User map[string]bool
 }
 
 type getbalance struct {
-	addr string
+	Addr string
 }
-type balance struct {
+type Balance struct {
 	Value int
 	FTXs  map[string]blockchain.InfoIPFS
 }
 
 type gettxins struct {
-	addr string
+	Addr string
 }
-type txinS struct {
+type Txins struct {
 	Inputs []byte
 }
 
@@ -92,18 +92,11 @@ func extractCommand(request []byte) []byte {
 }
 
 func sendData(addr string, data []byte) {
+	time.Sleep(time.Second / 10)
 	conn, err := net.Dial(protocol, addr)
+
 	if err != nil {
 		fmt.Printf("%s is not available\n", addr)
-		var updatedNodes []string
-
-		for _, node := range knownNodes[1:] {
-			if node != addr {
-				updatedNodes = append(updatedNodes, node)
-			}
-		}
-
-		knownNodes = updatedNodes
 
 		return
 	}
@@ -123,9 +116,9 @@ func SendGetData(address, kind string, id []byte) {
 }
 
 func SendInforIPFS(addr string, user map[string]bool) {
-	data := ipfs{user}
+	data := Ipfs{user}
 	payload := gobEncode(data)
-	request := append(commandToBytes("in4ipfs"), payload...)
+	request := append(commandToBytes("ipfs"), payload...)
 
 	sendData(addr, request)
 }
@@ -139,7 +132,7 @@ func SendFindIPFS(addr string, ipfsHashENC []byte) {
 }
 
 func SendTxIns(addr string, txins *blockchain.TXInputs) {
-	data := txinS{txins.Serialize()}
+	data := Txins{txins.Serialize()}
 	payload := gobEncode(data)
 	request := append(commandToBytes("txins"), payload...)
 
@@ -163,7 +156,7 @@ func SendGetBlance(addr string, addrTSS string) {
 
 func SendBalance(addr string, bals int, FTXs map[string]blockchain.InfoIPFS) {
 
-	payload := gobEncode(balance{bals, FTXs})
+	payload := gobEncode(Balance{bals, FTXs})
 	request := append(commandToBytes("balance"), payload...)
 
 	sendData(addr, request)
@@ -199,7 +192,7 @@ func handleGetTxIns(request []byte, addrFrom string) {
 		log.Panic(err)
 	}
 
-	address := payload.addr
+	address := payload.Addr
 	if !wallet.ValidateAddress(address) {
 		log.Panic("ERROR: Recipient address is not valid")
 	}
@@ -253,7 +246,7 @@ func handleGetBlance(request []byte, addrFrom string) {
 		log.Panic(err)
 	}
 
-	address := payload.addr
+	address := payload.Addr
 	if !wallet.ValidateAddress(address) {
 		log.Panic("ERROR: Address is not valid")
 	}
@@ -282,7 +275,7 @@ func HandleRPC(conn net.Conn) {
 	}
 	command := bytesToCommand(request[:commandLength])
 	fmt.Printf("Received %s command\n", command)
-	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("PORT_RPC"))
+	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], "3456")
 	switch command {
 	case "getbalance":
 		handleGetBlance(request, addrFrom)
