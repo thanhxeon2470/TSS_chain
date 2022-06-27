@@ -20,12 +20,13 @@ import (
 
 const subsidy = 10
 
-// Transaction represents a Bitcoin transaction
+// Transaction represents a TSS coin transaction
 type Transaction struct {
-	ID   []byte
-	Ipfs []TXIpfs
-	Vin  []TXInput
-	Vout []TXOutput
+	ID        []byte
+	Ipfs      []TXIpfs
+	Vin       []TXInput
+	Vout      []TXOutput
+	Signature []byte
 }
 
 // IsCoinbase checks whether the transaction is coinbase
@@ -137,13 +138,13 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 	// for _, ipfs := range tx.Ipfs {
 	// 	ipfsList = append(ipfsList, TXIpfs{ipfs.PubKeyOwner, ipfs.SignatureFile, ipfs.IpfsHash, ipfs.PubKeyHash, ipfs.Exp})
 	// }
-	txCopy := Transaction{tx.ID, ipfsList, inputs, outputs}
+	txCopy := Transaction{tx.ID, ipfsList, inputs, outputs, tx.Signature}
 
 	return txCopy
 }
 
 // Verify verifies signatures of Transaction inputs
-func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
+func (tx *Transaction) Verify(bc *Blockchain, prevTXs map[string]Transaction) bool {
 	if tx.IsCoinbase() {
 		return true
 	}
@@ -156,8 +157,13 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 
 	txCopy := tx.TrimmedCopy()
 	curve := elliptic.P256()
-
+	UTXOSet := UTXOSet{bc}
+	totalUnSpent := 0
 	for inID, vin := range tx.Vin {
+		// Check Transaction exist in UTXO
+		totalUnSpent += UTXOSet.IsTransactionExistInUTXO(vin.Txid, wallet.HashPubKey(vin.PubKey), vin.Vout)
+
+		// Verify signature
 		prevTx := prevTXs[hex.EncodeToString(vin.Txid)]
 		txCopy.Vin[inID].Signature = nil
 		txCopy.Vin[inID].PubKey = prevTx.Vout[vin.Vout].PubKeyHash
@@ -181,6 +187,14 @@ func (tx *Transaction) Verify(prevTXs map[string]Transaction) bool {
 			return false
 		}
 		txCopy.Vin[inID].PubKey = nil
+	}
+
+	// Check total Input == total Output
+	for _, vout := range tx.Vout {
+		totalUnSpent -= vout.Value
+	}
+	if totalUnSpent < 0 {
+		return false
 	}
 
 	return true

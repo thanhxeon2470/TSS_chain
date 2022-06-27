@@ -20,6 +20,7 @@ func (cli *CLI) printUsage() {
 	fmt.Println("  printchain #-# Print all the blocks of the blockchain")
 	fmt.Println("  reindexutxo #-# Rebuilds the UTXO set")
 	fmt.Println("  send -from FROM -to TO -amount AMOUNT -allowuser ADDRESS -ipfshash IPFSHASH -mine #-# Send AMOUNT of coins from FROM address to TO. Mine on the same node, when -mine is set.")
+	fmt.Println("  gettxin -address ADDRESS -amount AMOUNT #-# Get TX inputs in UTXO")
 	fmt.Println("  startnode -miner ADDRESS -storageminer ADDRESS #-# Start a node -miner enables mining")
 }
 
@@ -47,6 +48,9 @@ func (cli *CLI) Run() {
 	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
 	sendContentCmd := flag.NewFlagSet("sendcontent", flag.ExitOnError)
 	shareCmd := flag.NewFlagSet("share", flag.ExitOnError)
+
+	getTxCmd := flag.NewFlagSet("gettxin", flag.ExitOnError)
+
 	findIPFSCmd := flag.NewFlagSet("findipfs", flag.ExitOnError)
 	getIPFSCmd := flag.NewFlagSet("getipfs", flag.ExitOnError)
 	startNodeCmd := flag.NewFlagSet("startnode", flag.ExitOnError)
@@ -62,9 +66,11 @@ func (cli *CLI) Run() {
 	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
 	sendMine := sendCmd.Bool("mine", false, "Mine immediately on the same node")
 
+	getTxAddr := getTxCmd.String("address", "", "Address to get TX inputs in UTXO")
+	getTxAmount := getTxCmd.Int("amount", 0, "Amount to get TX inputs in UTXO")
+
 	sendContentFrom := sendContentCmd.String("from", "", "Source wallet private key")
 	sendContentTo := sendContentCmd.String("to", "", "Destination wallet address")
-	// sendContentAllow := sendContentCmd.String("allowuser", "", "These user can access to this file")
 	sendContentIPFShash := sendContentCmd.String("ipfshash", "", "Hash file of IPFS")
 	sendContentAmount := sendContentCmd.Int("amount", 0, "Amount to send")
 
@@ -113,6 +119,11 @@ func (cli *CLI) Run() {
 		}
 	case "send":
 		err := sendCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
+	case "gettxin":
+		err := getTxCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Panic(err)
 		}
@@ -187,6 +198,14 @@ func (cli *CLI) Run() {
 			os.Exit(1)
 		}
 		cli.Send(*sendFrom, *sendTo, *sendAmount, *sendMine)
+	}
+
+	if getTxCmd.Parsed() {
+		if *getTxAddr == "" || *getTxAmount <= 0 {
+			getTxCmd.Usage()
+			os.Exit(1)
+		}
+		cli.GetTxIn(*getTxAddr, *getTxAmount)
 	}
 
 	if sendContentCmd.Parsed() {

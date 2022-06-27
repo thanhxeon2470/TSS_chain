@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"bytes"
 	"encoding/hex"
 	"errors"
 	"log"
@@ -72,6 +73,34 @@ func (u UTXOSet) FindUTXO(pubKeyHash []byte) []TXOutput {
 	}
 
 	return UTXOs
+}
+
+// If tx in exist in UTXO, this func return value price unspent, else 0
+func (u UTXOSet) IsTransactionExistInUTXO(ID, pubKeyHash []byte, idx int) int {
+	db := u.Blockchain.DB
+	result := 0
+	err := db.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(utxoBucket))
+		c := b.Cursor()
+
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			outs := DeserializeOutputs(v)
+
+			if outs.Outputs[idx].IsLockedWithKey(pubKeyHash) {
+				if bytes.Compare(k, ID) == 0 {
+					result = outs.Outputs[idx].Value
+					return nil
+				}
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return result
 }
 
 // CountTransactions returns the number of transactions in the UTXO set

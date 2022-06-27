@@ -63,6 +63,11 @@ type tx struct {
 	Transaction []byte
 }
 
+type txin struct {
+	// AddrFrom    string
+	Inputs []byte
+}
+
 type verzion struct {
 	Version    int
 	BestHeight int
@@ -178,6 +183,14 @@ func sendGetData(address, kind string, id []byte) {
 
 func sendTx(addr string, tnx *blockchain.Transaction) {
 	data := tx{tnx.Serialize()}
+	payload := gobEncode(data)
+	request := append(commandToBytes("tx"), payload...)
+
+	sendData(addr, request)
+}
+
+func sendTxIns(addr string, txins *blockchain.TXInputs) {
+	data := txin{txins.Serialize()}
 	payload := gobEncode(data)
 	request := append(commandToBytes("tx"), payload...)
 
@@ -436,6 +449,22 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 	fmt.Println("Time receive tx...", time.Now().Unix())
 
 	timeReceivedTx <- time.Now().Unix()
+
+}
+
+func handleTxIns(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLocal string) {
+	var buff bytes.Buffer
+	var payload txin
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	txData := payload.Inputs
+	txins := blockchain.DeserializeInputs(txData)
 
 }
 
