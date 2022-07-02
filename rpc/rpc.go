@@ -3,7 +3,6 @@ package rpc
 import (
 	"bytes"
 	"encoding/gob"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -19,24 +18,7 @@ import (
 )
 
 const protocol = "tcp"
-const nodeVersion = 1
 const commandLength = 12
-
-var nodeAddress string
-var miningAddress string
-var StorageMiningAddress string
-var proposalCheck = false
-var randomIdentity = 0
-var knownNodes = []string{}
-var blocksInTransit = [][]byte{}
-
-var mempool = make(map[string]blockchain.Transaction)
-var timeReceivedTx = make(chan int64)
-var timeMining int64 = 30 // 30s
-
-type addr struct {
-	AddrList []string
-}
 
 type getdata struct {
 	// AddrFrom string
@@ -63,7 +45,7 @@ type gettxins struct {
 	Addr string
 }
 type Txins struct {
-	Inputs []byte
+	ValidOutputs map[string][][2]int
 }
 
 func commandToBytes(command string) []byte {
@@ -86,10 +68,6 @@ func bytesToCommand(bytes []byte) string {
 	}
 
 	return fmt.Sprintf("%s", command)
-}
-
-func extractCommand(request []byte) []byte {
-	return request[:commandLength]
 }
 
 func sendData(addr string, data []byte) {
@@ -132,8 +110,8 @@ func SendFindIPFS(addr string, ipfsHashENC []byte) {
 	sendData(addr, request)
 }
 
-func SendTxIns(addr string, txins *blockchain.TXInputs) {
-	data := Txins{txins.Serialize()}
+func SendTxIns(addr string, validOutputs map[string][][2]int) {
+	data := Txins{validOutputs}
 	payload := gobEncode(data)
 	request := append(commandToBytes("txins"), payload...)
 
@@ -205,35 +183,10 @@ func handleGetTxIns(request []byte, addrFrom string) {
 
 	pubKeyHash := utils.Base58Decode([]byte(address))
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-wallet.AddressChecksumLen]
-	UTXOs := UTXOSet.FindUTXO(pubKeyHash)
 
-	balance := 0
-	for _, out := range UTXOs {
-		balance += out.Value
-	}
-	acc, validOutputs := UTXOSet.FindSpendableOutputs(pubKeyHash, balance)
+	validOutputs := UTXOSet.FindAllSpendableOutputs(pubKeyHash)
 
-	txins := blockchain.TXInputs{nil}
-	if acc < balance {
-		log.Panic("ERROR: Not enough funds")
-
-	}
-	// Build a list of inputs
-	for txid, outs := range validOutputs {
-		txID, err := hex.DecodeString(txid)
-		if err != nil {
-			log.Panic(err)
-		}
-
-		for _, out := range outs {
-			input := blockchain.TXInput{txID, out, nil, nil}
-			txins.Inputs = append(txins.Inputs, input)
-
-			fmt.Println(hex.EncodeToString(txID), " ==== ", out)
-		}
-	}
-
-	SendTxIns(addrFrom, &txins)
+	SendTxIns(addrFrom, validOutputs)
 }
 
 func handleGetBlance(request []byte, addrFrom string) {
@@ -277,6 +230,8 @@ func HandleRPC(conn net.Conn) {
 	command := bytesToCommand(request[:commandLength])
 	fmt.Printf("Received %s command\n", command)
 	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("PORT_RPC"))
+	//for test
+	// addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], "3456")
 	switch command {
 	case "getbalance":
 		handleGetBlance(request, addrFrom)
