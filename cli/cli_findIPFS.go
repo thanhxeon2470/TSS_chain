@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
@@ -20,7 +21,11 @@ func (cli *CLI) FindIPFS(ipfsHash string) map[string]bool {
 	// pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
 	// UTXOs := UTXOSet.FindUTXO(pubKeyHash)
 	// FTXs := FTXSet.FindFTX(pubKeyHash)
-	listUser := FTXSet.FindIPFS(ipfsHash)
+	ipfsHashBytes, err := hex.DecodeString(ipfsHash)
+	if err != nil {
+		return nil
+	}
+	listUser := FTXSet.FindIPFS(ipfsHashBytes)
 	fmt.Printf("IPFS hash: %s\n", ipfsHash)
 	if len(listUser) > 0 {
 		fmt.Printf("List user:\n")

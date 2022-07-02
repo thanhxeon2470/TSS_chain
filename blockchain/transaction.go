@@ -111,7 +111,7 @@ func (tx Transaction) String() string {
 		lines = append(lines, fmt.Sprintf("       Script: %x", output.PubKeyHash))
 	}
 	if len(tx.Ipfs) > 0 {
-		lines = append(lines, fmt.Sprintf("     IPFS: %s | EXP: %s", tx.Ipfs[0].IpfsHash, time.Unix(tx.Ipfs[0].Exp, 0)))
+		lines = append(lines, fmt.Sprintf("     IPFS: %s | EXP: %s", tx.Ipfs[0].IpfsHashENC, time.Unix(tx.Ipfs[0].Exp, 0)))
 		for i, allowuser := range tx.Ipfs[0].PubKeyHash {
 			lines = append(lines, fmt.Sprintf("       User %d:  %x", i, allowuser))
 		}
@@ -240,7 +240,7 @@ func NewCoinbaseTXGenesis(to, data string) *Transaction {
 }
 
 // NewUTXOTransaction creates a new transaction
-func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, pubKeyHashAllow []byte, ipfsHash string, UTXOSet *UTXOSet) *Transaction {
+func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, pubKeyHashAllow, ipfsHash []byte, UTXOSet *UTXOSet) *Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
 	var ipfsList []TXIpfs
@@ -275,7 +275,7 @@ func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, pubKeyHashAllow
 
 	// Build a list of ipfs
 
-	if ipfsHash != "" {
+	if len(ipfsHash) > 0 {
 		var pubKeyHashAllows [][]byte
 		if pubKeyHashAllow != nil {
 			pubKeyHashAllows = append(pubKeyHashAllows, pubKeyHashAllow)
@@ -283,7 +283,7 @@ func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, pubKeyHashAllow
 			pubKeyHashAllows = append(pubKeyHashAllows, wallet.HashPubKey(w.PublicKey))
 
 		}
-		ipfsList = append(ipfsList, *NewTXIpfs(string(w.PublicKey), nil, ipfsHash, pubKeyHashAllows))
+		ipfsList = append(ipfsList, *NewTXIpfs(w.PublicKey, nil, ipfsHash, pubKeyHashAllows))
 		// ipfsList[0].SignIPFS(w.PrivateKey)
 	}
 

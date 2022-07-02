@@ -155,7 +155,7 @@ func handleFindIPFS(request []byte, addrFrom string) {
 	bc := blockchain.NewBlockchainView()
 	FTXSet := blockchain.FTXset{bc}
 	defer bc.DB.Close()
-	listUser := FTXSet.FindIPFS(string(payload.IpfsHashENC))
+	listUser := FTXSet.FindIPFS(payload.IpfsHashENC)
 
 	SendInforIPFS(addrFrom, listUser)
 }

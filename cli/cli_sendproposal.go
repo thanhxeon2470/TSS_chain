@@ -38,17 +38,17 @@ func (cli *CLI) SendProposal(prkFrom, to string, amount int, iHash string) strin
 	if err != nil {
 		return ""
 	}
-	tx := blockchain.NewUTXOTransaction(w, to, amount, nil, hex.EncodeToString(ct), &UTXOSet)
+	tx := blockchain.NewUTXOTransaction(w, to, amount, nil, ct, &UTXOSet)
 
 	if tx == nil {
 		fmt.Println("Fail to create transaction!")
 
 		return ""
 	}
-	proposal := proposal{tx.ID, []byte(to), []byte(iHash), amount}
-	sendProposal(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], proposal)
+	proposal := Proposal{tx.ID, []byte(to), []byte(iHash), amount}
+	SendProposal(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], proposal)
 	sendto := fmt.Sprint("127.0.0.1:", os.Getenv("PORT"))
-	sendTx(sendto, tx)
+	SendTx(sendto, tx)
 
 	return hex.EncodeToString(ct)
 }

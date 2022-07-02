@@ -3,6 +3,7 @@ package blockchain
 import (
 	// "github.com/thanhxeon2470/TSS_chain/blockchain"
 
+	"bytes"
 	"encoding/hex"
 	"log"
 
@@ -35,10 +36,11 @@ func (f FTXset) FindFTX(pubKeyHash []byte) map[string]InfoIPFS {
 
 			for _, ipfs := range ipfsList.TXIpfsList {
 				if ipfs.IsLockedWithKey(pubKeyHash) {
+					ipfsEnc := hex.EncodeToString(ipfs.IpfsHashENC)
 					if ipfs.IsOwner(pubKeyHash) {
-						listFTX[ipfs.IpfsHash] = InfoIPFS{true, ipfs.Exp}
+						listFTX[ipfsEnc] = InfoIPFS{true, ipfs.Exp}
 					} else {
-						listFTX[ipfs.IpfsHash] = InfoIPFS{false, ipfs.Exp}
+						listFTX[ipfsEnc] = InfoIPFS{false, ipfs.Exp}
 					}
 				}
 			}
@@ -55,7 +57,7 @@ func (f FTXset) FindFTX(pubKeyHash []byte) map[string]InfoIPFS {
 }
 
 //FindIPFS to find user allow and owner of this hash file
-func (f FTXset) FindIPFS(ipfsHash string) map[string]bool {
+func (f FTXset) FindIPFS(ipfsHash []byte) map[string]bool {
 	listUserAllow := make(map[string]bool)
 	db := f.Blockchain.DB
 	err := db.View(func(tx *bolt.Tx) error {
@@ -66,7 +68,7 @@ func (f FTXset) FindIPFS(ipfsHash string) map[string]bool {
 			ipfsList := DeserializeIPFS(v)
 
 			for _, ipfs := range ipfsList.TXIpfsList {
-				if ipfs.IpfsHash == ipfsHash {
+				if bytes.Compare(ipfs.IpfsHashENC, ipfsHash) == 0 {
 					for _, userPubKeyHash := range ipfs.PubKeyHash {
 						versionedPayload := append([]byte{wallet.Version}, userPubKeyHash...)
 						checksum := wallet.Checksum(versionedPayload)

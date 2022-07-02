@@ -1,6 +1,7 @@
 package helper
 
 import (
+	"encoding/hex"
 	"fmt"
 	"log"
 	"os/exec"
@@ -29,17 +30,18 @@ func RemoveExpireIPFS(bc *blockchain.Blockchain) []string {
 
 				for _, ipfs := range ipfsList.TXIpfsList {
 					if ipfs.Exp < time.Now().Unix() {
-						getCMD := exec.Command("ipfs-cluster-ctl", "pin", "rm", ipfs.IpfsHash)
+						IpfsHashENC := hex.EncodeToString(ipfs.IpfsHashENC)
+						getCMD := exec.Command("ipfs-cluster-ctl", "pin", "rm", IpfsHashENC)
 						stdout, err := getCMD.Output()
 						if err != nil {
 							log.Panic("Error remove file")
 							break
 						}
 						str := string(stdout)
-						if !strings.Contains(str, ipfs.IpfsHash) {
+						if !strings.Contains(str, IpfsHashENC) {
 							fmt.Print("Cant remove file from ipfs")
 						} else {
-							listRM = append(listRM, ipfs.IpfsHash)
+							listRM = append(listRM, IpfsHashENC)
 						}
 					}
 				}

@@ -18,9 +18,11 @@ import (
 type TXIpfs struct {
 	PubKeyOwner   []byte
 	SignatureFile []byte
-	IpfsHash      string
-	PubKeyHash    [][]byte
-	Exp           int64
+
+	IpfsHashENC []byte
+	PubKeyHash  [][]byte
+
+	Exp int64
 }
 
 // Lock signs the ipfs hash
@@ -54,8 +56,8 @@ func (t *TXIpfs) IsOwner(pubKeyHash []byte) bool {
 }
 
 // NewTXIpfs create a new TXIpfs
-func NewTXIpfs(pubKeyOwner string, signatureFile []byte, ipfsHash string, pubKeyHashAllows [][]byte) *TXIpfs {
-	txi := &TXIpfs{[]byte(pubKeyOwner), signatureFile, ipfsHash, pubKeyHashAllows, time.Now().Unix() + 31536000} // exp 1 year
+func NewTXIpfs(pubKeyOwner []byte, signatureFile, ipfsHash []byte, pubKeyHashAllows [][]byte) *TXIpfs {
+	txi := &TXIpfs{pubKeyOwner, signatureFile, ipfsHash, pubKeyHashAllows, time.Now().Unix() + 31536000} // exp 1 year
 	// var addressesByte [][]byte
 	// for _, address := range addresses {
 	// 	if wallet.ValidateAddress(address) {
@@ -68,7 +70,7 @@ func NewTXIpfs(pubKeyOwner string, signatureFile []byte, ipfsHash string, pubKey
 }
 
 func (t *TXIpfs) SignIPFS(privKey ecdsa.PrivateKey) {
-	dataToSign := []byte(t.IpfsHash)
+	dataToSign := []byte(t.IpfsHashENC)
 	for _, data := range t.PubKeyHash {
 		dataToSign = append(dataToSign, data...)
 	}
@@ -83,7 +85,7 @@ func (t *TXIpfs) SignIPFS(privKey ecdsa.PrivateKey) {
 }
 
 func (t *TXIpfs) verifyIPFS() bool {
-	dataToVerify := []byte(t.IpfsHash)
+	dataToVerify := []byte(t.IpfsHashENC)
 	for _, data := range t.PubKeyHash {
 		dataToVerify = append(dataToVerify, data...)
 	}

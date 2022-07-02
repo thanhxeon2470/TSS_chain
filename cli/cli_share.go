@@ -121,16 +121,16 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 			return ""
 		}
 		pubKeyHash := wallet.HashPubKey(append(rawPubKey.X.Bytes(), rawPubKey.Y.Bytes()...))
-		tx := blockchain.NewUTXOTransaction(w, to, amount, pubKeyHash, hex.EncodeToString(ct), &UTXOSet)
+		tx := blockchain.NewUTXOTransaction(w, to, amount, pubKeyHash, ct, &UTXOSet)
 		if tx == nil {
 			fmt.Println("Fail to create transaction!")
 
 			return ""
 		}
-		proposal := proposal{tx.ID, []byte(to), []byte(newIHash), amount}
-		sendProposal(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], proposal)
+		proposal := Proposal{tx.ID, []byte(to), []byte(newIHash), amount}
+		SendProposal(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], proposal)
 		sendto := fmt.Sprint("127.0.0.1:", os.Getenv("PORT"))
-		sendTx(sendto, tx)
+		SendTx(sendto, tx)
 
 		return hex.EncodeToString(ct)
 	}

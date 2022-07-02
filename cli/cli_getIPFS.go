@@ -16,7 +16,11 @@ func (cli *CLI) IPFSget(prk, ipfsHashENC string) string {
 	bc := blockchain.NewBlockchainView()
 	defer bc.DB.Close()
 	FTXSet := blockchain.FTXset{bc}
-	listUser := FTXSet.FindIPFS(ipfsHashENC)
+	ipfsHashBytes, err := hex.DecodeString(ipfsHashENC)
+	if err != nil {
+		return ""
+	}
+	listUser := FTXSet.FindIPFS(ipfsHashBytes)
 	addr := w.GetAddress()
 	if len(listUser) > 0 {
 		for user, _ := range listUser {
