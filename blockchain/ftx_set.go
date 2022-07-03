@@ -69,23 +69,23 @@ func (f FTXset) FindIPFS(ipfsHash []byte) map[string]bool {
 
 			for _, ipfs := range ipfsList.TXIpfsList {
 				if bytes.Compare(ipfs.IpfsHashENC, ipfsHash) == 0 {
-					for _, userPubKeyHash := range ipfs.PubKeyHash {
-						versionedPayload := append([]byte{wallet.Version}, userPubKeyHash...)
-						checksum := wallet.Checksum(versionedPayload)
+					author := false
 
-						fullPayload := append(versionedPayload, checksum...)
-						address := utils.Base58Encode(fullPayload)
-						author := false
-
-						listUserAllow[string(address)] = author
-					}
-					pubKeyHash := wallet.HashPubKey(ipfs.PubKeyOwner)
-
-					versionedPayload := append([]byte{wallet.Version}, pubKeyHash...)
+					versionedPayload := append([]byte{wallet.Version}, ipfs.PubKeyHash...)
 					checksum := wallet.Checksum(versionedPayload)
 
 					fullPayload := append(versionedPayload, checksum...)
 					address := utils.Base58Encode(fullPayload)
+
+					listUserAllow[string(address)] = author
+
+					pubKeyHash := wallet.HashPubKey(ipfs.PubKeyOwner)
+
+					versionedPayload = append([]byte{wallet.Version}, pubKeyHash...)
+					checksum = wallet.Checksum(versionedPayload)
+
+					fullPayload = append(versionedPayload, checksum...)
+					address = utils.Base58Encode(fullPayload)
 					listUserAllow[string(address)] = true
 
 				}

@@ -407,19 +407,19 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 
 // SignTransaction signs inputs of a Transaction
 func (bc *Blockchain) SignTransaction(tx *Transaction, privKey ecdsa.PrivateKey) {
-	prevTXs := make(map[string]Transaction)
+	// prevTXs := make(map[string]Transaction)
 
-	for _, vin := range tx.Vin {
-		prevTX, err := bc.FindTransaction(vin.Txid)
-		if err != nil {
-			log.Panic(err)
-		}
-		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
-	}
+	// for _, vin := range tx.Vin {
+	// 	prevTX, err := bc.FindTransaction(vin.Txid)
+	// 	if err != nil {
+	// 		log.Panic(err)
+	// 	}
+	// 	prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
+	// }
 	if len(tx.Ipfs) > 0 {
 		tx.Ipfs[0].SignIPFS(privKey)
 	}
-	tx.Sign(privKey, prevTXs)
+	tx.Sign(privKey)
 }
 
 // VerifyTransaction verifies transaction input signatures
@@ -428,19 +428,19 @@ func (bc *Blockchain) VerifyTransaction(tx *Transaction) bool {
 		return true
 	}
 
-	prevTXs := make(map[string]Transaction)
+	// prevTXs := make(map[string]Transaction)
 
-	for _, vin := range tx.Vin {
-		prevTX, err := bc.FindTransaction(vin.Txid)
-		if err != nil {
-			log.Panic(err)
-		}
-		prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
-	}
+	// for _, vin := range tx.Vin {
+	// 	prevTX, err := bc.FindTransaction(vin.Txid)
+	// 	if err != nil {
+	// 		log.Panic(err)
+	// 	}
+	// 	prevTXs[hex.EncodeToString(prevTX.ID)] = prevTX
+	// }
 	if len(tx.Ipfs) > 0 {
-		return tx.Verify(bc, prevTXs) && tx.Ipfs[0].verifyIPFS()
+		return tx.Verify(bc) && tx.Ipfs[0].verifyIPFS()
 	}
-	return tx.Verify(bc, prevTXs)
+	return tx.Verify(bc)
 }
 
 func dbExists(dbFile string) bool {

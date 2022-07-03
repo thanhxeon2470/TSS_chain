@@ -25,18 +25,12 @@ const commandLength = 12
 var nodeAddress string
 var miningAddress string
 var StorageMiningAddress string
-var proposalCheck = false
-var randomIdentity = 0
 var knownNodes = []string{}
 var blocksInTransit = [][]byte{}
 
 var mempool = make(map[string]blockchain.Transaction)
 var timeReceivedTx = make(chan int64)
 var timeMining int64 = 30 // 30s
-
-type addr struct {
-	AddrList []string
-}
 
 type block struct {
 	// AddrFrom string
@@ -83,7 +77,7 @@ type Proposal struct {
 }
 
 // feedback proposal
-type fbproposal struct {
+type Fbproposal struct {
 	TxHash []byte
 	Accept bool
 }
@@ -110,9 +104,9 @@ func bytesToCommand(bytes []byte) string {
 	return fmt.Sprintf("%s", command)
 }
 
-func extractCommand(request []byte) []byte {
-	return request[:commandLength]
-}
+// func extractCommand(request []byte) []byte {
+// 	return request[:commandLength]
+// }
 
 // func requestBlocks(bc *blockchain.Blockchain) {
 // 	for _, node := range knownNodes {
@@ -213,7 +207,7 @@ func SendProposal(addr string, pps Proposal) {
 }
 
 func SendFBProposal(addr string, txid []byte, feedback bool) {
-	payload := gobEncode(fbproposal{txid, feedback})
+	payload := gobEncode(Fbproposal{txid, feedback})
 	request := append(commandToBytes("feedback"), payload...)
 	SendData(addr, request)
 }
@@ -266,7 +260,7 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 
 func handleFeedback(request []byte, addrFrom, addrLocal string) {
 	var buff bytes.Buffer
-	var payload fbproposal
+	var payload Fbproposal
 	buff.Write(request[commandLength:])
 	dec := gob.NewDecoder(&buff)
 	err := dec.Decode(&payload)
@@ -592,6 +586,7 @@ func StartServer(minerAddress string) {
 		log.Panic(err)
 	}
 	defer ln.Close()
+	fmt.Println("Blockchain is listening at port ", port)
 
 	portRPC := fmt.Sprintf(":%s", os.Getenv("PORT_RPC"))
 	lnRpc, err := net.Listen(protocol, portRPC)
@@ -599,6 +594,7 @@ func StartServer(minerAddress string) {
 		log.Panic(err)
 	}
 	defer lnRpc.Close()
+	fmt.Println("Blockchain RPC is listening at port ", portRPC)
 
 	bc := blockchain.NewBlockchain()
 	addrs, err := net.InterfaceAddrs()

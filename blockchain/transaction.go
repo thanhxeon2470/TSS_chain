@@ -59,23 +59,16 @@ func (tx *Transaction) Hash() []byte {
 }
 
 // Sign signs each input of a Transaction
-func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transaction) {
+func (tx *Transaction) Sign(privKey ecdsa.PrivateKey) {
 	if tx.IsCoinbase() {
 		return
 	}
 
-	for _, vin := range tx.Vin {
-		if prevTXs[hex.EncodeToString(vin.Txid)].ID == nil {
-			log.Panic("ERROR: Previous transaction is not correct")
-		}
-	}
-
 	txCopy := tx.TrimmedCopy()
 
-	for inID, vin := range txCopy.Vin {
-		prevTx := prevTXs[hex.EncodeToString(vin.Txid)]
+	for inID, _ := range txCopy.Vin {
 		txCopy.Vin[inID].Signature = nil
-		txCopy.Vin[inID].PubKey = prevTx.Vout[vin.Vout].PubKeyHash
+		txCopy.Vin[inID].PubKey = nil
 
 		dataToSign := fmt.Sprintf("%x\n", txCopy)
 		hashToSign := sha256.Sum256([]byte(dataToSign))
@@ -86,7 +79,6 @@ func (tx *Transaction) Sign(privKey ecdsa.PrivateKey, prevTXs map[string]Transac
 		signature := append(r.Bytes(), s.Bytes()...)
 
 		tx.Vin[inID].Signature = signature
-		txCopy.Vin[inID].PubKey = nil
 	}
 }
 
@@ -143,30 +135,23 @@ func (tx *Transaction) TrimmedCopy() Transaction {
 }
 
 // Verify verifies signatures of Transaction inputs
-func (tx *Transaction) Verify(bc *Blockchain, prevTXs map[string]Transaction) bool {
+func (tx *Transaction) Verify(bc *Blockchain) bool {
 	if tx.IsCoinbase() {
 		return true
-	}
-
-	for _, vin := range tx.Vin {
-		if prevTXs[hex.EncodeToString(vin.Txid)].ID == nil {
-			log.Panic("ERROR: Previous transaction is not correct")
-		}
 	}
 
 	txCopy := tx.TrimmedCopy()
 	curve := elliptic.P256()
 	UTXOSet := UTXOSet{bc}
-	totalUnSpent := 0
+	totalSpent := 0
 	for inID, vin := range tx.Vin {
 		// Check Transaction exist in UTXO
-		totalUnSpent += UTXOSet.IsTransactionExistInUTXO(vin.Txid, wallet.HashPubKey(vin.PubKey), vin.Vout)
+		totalSpent += UTXOSet.IsTransactionExistInUTXO(vin.Txid, wallet.HashPubKey(vin.PubKey), vin.Vout)
 
 		// Verify signature
-		prevTx := prevTXs[hex.EncodeToString(vin.Txid)]
+		// prevTx := prevTXs[hex.EncodeToString(vin.Txid)]
 		txCopy.Vin[inID].Signature = nil
-		txCopy.Vin[inID].PubKey = prevTx.Vout[vin.Vout].PubKeyHash
-
+		txCopy.Vin[inID].PubKey = nil
 		r := big.Int{}
 		s := big.Int{}
 		sigLen := len(vin.Signature)
@@ -185,14 +170,13 @@ func (tx *Transaction) Verify(bc *Blockchain, prevTXs map[string]Transaction) bo
 		if ecdsa.Verify(&rawPubKey, hashToVerify[:], &r, &s) == false {
 			return false
 		}
-		txCopy.Vin[inID].PubKey = nil
 	}
 
 	// Check total Input == total Output
 	for _, vout := range tx.Vout {
-		totalUnSpent -= vout.Value
+		totalSpent -= vout.Value
 	}
-	if totalUnSpent < 0 {
+	if totalSpent < 0 {
 		return false
 	}
 
@@ -276,14 +260,10 @@ func NewUTXOTransaction(w *wallet.Wallet, to string, amount int, pubKeyHashAllow
 	// Build a list of ipfs
 
 	if len(ipfsHash) > 0 {
-		var pubKeyHashAllows [][]byte
-		if pubKeyHashAllow != nil {
-			pubKeyHashAllows = append(pubKeyHashAllows, pubKeyHashAllow)
-		} else {
-			pubKeyHashAllows = append(pubKeyHashAllows, wallet.HashPubKey(w.PublicKey))
-
+		if pubKeyHashAllow == nil {
+			pubKeyHashAllow = wallet.HashPubKey(w.PublicKey)
 		}
-		ipfsList = append(ipfsList, *NewTXIpfs(w.PublicKey, nil, ipfsHash, pubKeyHashAllows))
+		ipfsList = append(ipfsList, *NewTXIpfs(w.PublicKey, nil, ipfsHash, pubKeyHashAllow))
 		// ipfsList[0].SignIPFS(w.PrivateKey)
 	}
 

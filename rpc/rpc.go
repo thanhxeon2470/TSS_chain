@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net"
-	"os"
 	"strings"
 	"time"
 
@@ -46,6 +45,19 @@ type gettxins struct {
 }
 type Txins struct {
 	ValidOutputs map[string][][2]int
+}
+
+type Proposal struct {
+	TxHash               []byte
+	StorageMiningAddress []byte
+	FileHash             []byte
+	Amount               int
+}
+
+// feedback proposal
+type Fbproposal struct {
+	TxHash []byte
+	Accept bool
 }
 
 func commandToBytes(command string) []byte {
@@ -141,6 +153,17 @@ func SendBalance(addr string, bals int, FTXs map[string]blockchain.InfoIPFS) {
 	sendData(addr, request)
 }
 
+func SendProposal(addr string, pps Proposal) {
+	payload := gobEncode(pps)
+	request := append(commandToBytes("proposal"), payload...)
+	sendData(addr, request)
+}
+
+func SendFBProposal(addr string, txid []byte, feedback bool) {
+	payload := gobEncode(Fbproposal{txid, feedback})
+	request := append(commandToBytes("feedback"), payload...)
+	sendData(addr, request)
+}
 func handleFindIPFS(request []byte, addrFrom string) {
 	var buff bytes.Buffer
 	var payload findipfs
@@ -222,6 +245,18 @@ func handleGetBlance(request []byte, addrFrom string) {
 	SendBalance(addrFrom, balance, FTXs)
 }
 
+func handleProposal(request []byte, addrFrom, addrLocal string) {
+	var buff bytes.Buffer
+	var payload Proposal
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
+
+}
+
 func HandleRPC(conn net.Conn) {
 	request, err := ioutil.ReadAll(conn)
 	if err != nil {
@@ -229,9 +264,9 @@ func HandleRPC(conn net.Conn) {
 	}
 	command := bytesToCommand(request[:commandLength])
 	fmt.Printf("Received %s command\n", command)
-	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("PORT_RPC"))
+	// addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("PORT_RPC"))
 	//for test
-	// addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], "3456")
+	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], "3456")
 	switch command {
 	case "getbalance":
 		handleGetBlance(request, addrFrom)
@@ -239,6 +274,8 @@ func HandleRPC(conn net.Conn) {
 		handleGetTxIns(request, addrFrom)
 	case "findipfs":
 		handleFindIPFS(request, addrFrom)
+	case "proposal":
+		// handleProposal(request, addrFrom)
 	default:
 		fmt.Println("Unknown command!")
 	}

@@ -20,7 +20,7 @@ type TXIpfs struct {
 	SignatureFile []byte
 
 	IpfsHashENC []byte
-	PubKeyHash  [][]byte
+	PubKeyHash  []byte
 
 	Exp int64
 }
@@ -36,10 +36,8 @@ type TXIpfs struct {
 
 // IsLockedWithKey checks if the ipfs hash can be used by the owner of the pubkey
 func (t *TXIpfs) IsLockedWithKey(pubKeyHash []byte) bool {
-	for _, hash := range t.PubKeyHash {
-		if bytes.Compare(hash, pubKeyHash) == 0 {
-			return true
-		}
+	if bytes.Compare(t.PubKeyHash, pubKeyHash) == 0 {
+		return true
 	}
 	return false
 }
@@ -56,7 +54,7 @@ func (t *TXIpfs) IsOwner(pubKeyHash []byte) bool {
 }
 
 // NewTXIpfs create a new TXIpfs
-func NewTXIpfs(pubKeyOwner []byte, signatureFile, ipfsHash []byte, pubKeyHashAllows [][]byte) *TXIpfs {
+func NewTXIpfs(pubKeyOwner []byte, signatureFile, ipfsHash []byte, pubKeyHashAllows []byte) *TXIpfs {
 	txi := &TXIpfs{pubKeyOwner, signatureFile, ipfsHash, pubKeyHashAllows, time.Now().Unix() + 31536000} // exp 1 year
 	// var addressesByte [][]byte
 	// for _, address := range addresses {
@@ -70,10 +68,8 @@ func NewTXIpfs(pubKeyOwner []byte, signatureFile, ipfsHash []byte, pubKeyHashAll
 }
 
 func (t *TXIpfs) SignIPFS(privKey ecdsa.PrivateKey) {
-	dataToSign := []byte(t.IpfsHashENC)
-	for _, data := range t.PubKeyHash {
-		dataToSign = append(dataToSign, data...)
-	}
+	dataToSign := t.IpfsHashENC
+	dataToSign = append(dataToSign, t.PubKeyHash...)
 
 	hashToSign := sha256.Sum256(dataToSign)
 	r, s, err := ecdsa.Sign(rand.Reader, &privKey, hashToSign[:])
@@ -85,10 +81,8 @@ func (t *TXIpfs) SignIPFS(privKey ecdsa.PrivateKey) {
 }
 
 func (t *TXIpfs) verifyIPFS() bool {
-	dataToVerify := []byte(t.IpfsHashENC)
-	for _, data := range t.PubKeyHash {
-		dataToVerify = append(dataToVerify, data...)
-	}
+	dataToVerify := t.IpfsHashENC
+	dataToVerify = append(dataToVerify, t.PubKeyHash...)
 
 	hashToVerify := sha256.Sum256(dataToVerify)
 
