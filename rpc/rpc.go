@@ -306,7 +306,7 @@ func handleIPFS(request []byte) []byte {
 
 }
 
-func HandleRPCReceive(conn net.Conn) []byte {
+func HandleRPCReceive(conn net.Conn) ([]byte, string) {
 	request, err := ioutil.ReadAll(conn)
 	if err != nil {
 		log.Panic(err)
@@ -315,17 +315,17 @@ func HandleRPCReceive(conn net.Conn) []byte {
 	fmt.Printf("Received %s command\n", command)
 	switch command {
 	case "balance":
-		return handleBlance(request)
+		return handleBlance(request), command
 	case "txins":
-		return handleTxIns(request)
+		return handleTxIns(request), command
 	case "ipfs":
-		return handleIPFS(request)
+		return handleIPFS(request), command
 	default:
 		fmt.Println("Unknown command!")
 	}
 
 	conn.Close()
-	return nil
+	return nil, "unknown"
 }
 
 func gobEncode(data interface{}) []byte {
