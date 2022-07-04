@@ -92,7 +92,7 @@ func commandToBytes(command string) []byte {
 	return bytes[:]
 }
 
-func bytesToCommand(bytes []byte) string {
+func BytesToCommand(bytes []byte) string {
 	var command []byte
 
 	for _, b := range bytes {
@@ -537,7 +537,7 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 	if err != nil {
 		log.Panic(err)
 	}
-	command := bytesToCommand(request[:commandLength])
+	command := BytesToCommand(request[:commandLength])
 	fmt.Printf("Received %s command\n", command)
 	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("PORT"))
 	addrLocal := fmt.Sprintf("%s:%s", strings.Split(conn.LocalAddr().String(), ":")[0], os.Getenv("PORT"))

@@ -70,7 +70,7 @@ func commandToBytes(command string) []byte {
 	return bytes[:]
 }
 
-func bytesToCommand(bytes []byte) string {
+func BytesToCommand(bytes []byte) string {
 	var command []byte
 
 	for _, b := range bytes {
@@ -245,24 +245,24 @@ func handleGetBlance(request []byte, addrFrom string) {
 	SendBalance(addrFrom, balance, FTXs)
 }
 
-func handleProposal(request []byte, addrFrom, addrLocal string) {
-	var buff bytes.Buffer
-	var payload Proposal
-	buff.Write(request[commandLength:])
-	dec := gob.NewDecoder(&buff)
-	err := dec.Decode(&payload)
-	if err != nil {
-		log.Panic(err)
-	}
+// func handleProposal(request []byte, addrFrom, addrLocal string) {
+// 	var buff bytes.Buffer
+// 	var payload Proposal
+// 	buff.Write(request[commandLength:])
+// 	dec := gob.NewDecoder(&buff)
+// 	err := dec.Decode(&payload)
+// 	if err != nil {
+// 		log.Panic(err)
+// 	}
 
-}
+// }
 
 func HandleRPC(conn net.Conn) {
 	request, err := ioutil.ReadAll(conn)
 	if err != nil {
 		log.Panic(err)
 	}
-	command := bytesToCommand(request[:commandLength])
+	command := BytesToCommand(request[:commandLength])
 	fmt.Printf("Received %s command\n", command)
 	// addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("PORT_RPC"))
 	//for test
@@ -274,8 +274,8 @@ func HandleRPC(conn net.Conn) {
 		handleGetTxIns(request, addrFrom)
 	case "findipfs":
 		handleFindIPFS(request, addrFrom)
-	case "proposal":
-		// handleProposal(request, addrFrom)
+	// case "proposal":
+	// handleProposal(request, addrFrom)
 	default:
 		fmt.Println("Unknown command!")
 	}
@@ -311,7 +311,7 @@ func HandleRPCReceive(conn net.Conn) []byte {
 	if err != nil {
 		log.Panic(err)
 	}
-	command := bytesToCommand(request[:commandLength])
+	command := BytesToCommand(request[:commandLength])
 	fmt.Printf("Received %s command\n", command)
 	switch command {
 	case "balance":
