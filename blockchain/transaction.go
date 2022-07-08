@@ -146,6 +146,7 @@ func (tx *Transaction) Verify(bc *Blockchain) bool {
 	totalSpent := 0
 	for inID, vin := range tx.Vin {
 		// Check Transaction exist in UTXO
+
 		totalSpent += UTXOSet.IsTransactionExistInUTXO(vin.Txid, wallet.HashPubKey(vin.PubKey), vin.Vout)
 
 		// Verify signature
@@ -176,11 +177,8 @@ func (tx *Transaction) Verify(bc *Blockchain) bool {
 	for _, vout := range tx.Vout {
 		totalSpent -= vout.Value
 	}
-	if totalSpent < 0 {
-		return false
-	}
 
-	return true
+	return totalSpent >= 0
 }
 
 // NewCoinbaseTX creates a new coinbase transaction

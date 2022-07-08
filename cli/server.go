@@ -458,18 +458,12 @@ func MiningBlock(bc *blockchain.Blockchain, timeStart chan int64) {
 		MineTransactions:
 			var txs []*blockchain.Transaction
 
-			for id := range mempool {
-				tx := mempool[id]
+			for _, tx := range mempool {
 				if bc.VerifyTransaction(&tx) {
-					UTXO := blockchain.UTXOSet{bc}
-					if UTXO.UpdateFromTX(&tx) {
-						txs = append(txs, &tx)
-
-					} else {
-						txID := hex.EncodeToString(tx.ID)
-						delete(mempool, txID)
-					}
+					txs = append(txs, &tx)
 				}
+				txID := hex.EncodeToString(tx.ID)
+				delete(mempool, txID)
 			}
 
 			if len(txs) == 0 {
