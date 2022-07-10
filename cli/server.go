@@ -30,7 +30,7 @@ var blocksInTransit = [][]byte{}
 
 var mempool = make(map[string]blockchain.Transaction)
 var timeReceivedTx = make(chan int64)
-var timeMining int64 = 30 // 30s
+var timeMining int64 = 5 // 30s
 
 type block struct {
 	// AddrFrom string
@@ -250,6 +250,10 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 		}
 	}
 	if addrLocal == knownNodes[0] {
+		if !nodeIsKnown(addrFrom) {
+			knownNodes = append(knownNodes, addrFrom)
+			fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
+		}
 		for _, node := range knownNodes {
 			if node != addrLocal && node != addrFrom {
 				SendProposal(node, payload)
@@ -449,52 +453,55 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 
 // After 30s, if less than 3 txs block will be mined
 func MiningBlock(bc *blockchain.Blockchain, timeStart chan int64) {
-	t := <-timeStart
-	fmt.Println("Wait for mine...", t)
 	for {
-		timeNow := time.Now().Unix()
-		if len(miningAddress) > 0 && len(mempool) >= 1 && (len(mempool) >= 3 || timeNow-t > timeMining) {
-			fmt.Println("Mined...", timeNow)
-		MineTransactions:
-			var txs []*blockchain.Transaction
 
-			for _, tx := range mempool {
-				if bc.VerifyTransaction(&tx) {
-					txs = append(txs, &tx)
+		t := <-timeStart
+		fmt.Println("Wait for mine...", t)
+		for {
+			timeNow := time.Now().Unix()
+			if len(miningAddress) > 0 && len(mempool) >= 1 && (len(mempool) >= 3 || timeNow-t > timeMining) {
+				fmt.Println("Mined...", timeNow)
+			MineTransactions:
+				var txs []*blockchain.Transaction
+
+				for _, tx := range mempool {
+					if bc.VerifyTransaction(&tx) {
+						txs = append(txs, &tx)
+					}
+					txID := hex.EncodeToString(tx.ID)
+					delete(mempool, txID)
 				}
-				txID := hex.EncodeToString(tx.ID)
-				delete(mempool, txID)
+
+				if len(txs) == 0 {
+					fmt.Println("All transactions are invalid! Waiting for new ones...")
+					return
+				}
+
+				cbTx := blockchain.NewCoinbaseTX(miningAddress, "")
+				txs = append(txs, cbTx)
+
+				newBlock := bc.MineBlock(txs)
+				UTXOSet := blockchain.UTXOSet{bc}
+				FTXSet := blockchain.FTXset{bc}
+				UTXOSet.Reindex()
+				FTXSet.ReindexFTX()
+
+				fmt.Println("New block is mined!")
+
+				for _, tx := range txs {
+					txID := hex.EncodeToString(tx.ID)
+					delete(mempool, txID)
+				}
+
+				for _, node := range knownNodes {
+					SendInv(node, "block", [][]byte{newBlock.Hash})
+				}
+
+				if len(mempool) > 0 {
+					goto MineTransactions
+				}
+				break
 			}
-
-			if len(txs) == 0 {
-				fmt.Println("All transactions are invalid! Waiting for new ones...")
-				return
-			}
-
-			cbTx := blockchain.NewCoinbaseTX(miningAddress, "")
-			txs = append(txs, cbTx)
-
-			newBlock := bc.MineBlock(txs)
-			UTXOSet := blockchain.UTXOSet{bc}
-			FTXSet := blockchain.FTXset{bc}
-			UTXOSet.Reindex()
-			FTXSet.ReindexFTX()
-
-			fmt.Println("New block is mined!")
-
-			for _, tx := range txs {
-				txID := hex.EncodeToString(tx.ID)
-				delete(mempool, txID)
-			}
-
-			for _, node := range knownNodes {
-				SendInv(node, "block", [][]byte{newBlock.Hash})
-			}
-
-			if len(mempool) > 0 {
-				goto MineTransactions
-			}
-			break
 		}
 	}
 

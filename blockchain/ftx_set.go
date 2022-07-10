@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/hex"
 	"log"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/thanhxeon2470/TSS_chain/utils"
@@ -35,7 +36,7 @@ func (f FTXset) FindFTX(pubKeyHash []byte) map[string]InfoIPFS {
 			ipfsList := DeserializeIPFS(v)
 
 			for _, ipfs := range ipfsList.TXIpfsList {
-				if ipfs.IsLockedWithKey(pubKeyHash) {
+				if ipfs.IsLockedWithKey(pubKeyHash) && ipfs.Exp > time.Now().Unix() {
 					ipfsEnc := hex.EncodeToString(ipfs.IpfsHashENC)
 					if ipfs.IsOwner(pubKeyHash) {
 						listFTX[ipfsEnc] = InfoIPFS{true, ipfs.Exp}
@@ -68,7 +69,7 @@ func (f FTXset) FindIPFS(ipfsHash []byte) map[string]bool {
 			ipfsList := DeserializeIPFS(v)
 
 			for _, ipfs := range ipfsList.TXIpfsList {
-				if bytes.Compare(ipfs.IpfsHashENC, ipfsHash) == 0 {
+				if bytes.Equal(ipfs.IpfsHashENC, ipfsHash) && ipfs.Exp > time.Now().Unix() {
 					author := false
 
 					versionedPayload := append([]byte{wallet.Version}, ipfs.PubKeyHash...)
@@ -132,7 +133,7 @@ func (f FTXset) ReindexFTX() {
 
 	FTX := f.Blockchain.FindFTX()
 
-	err = db.Update(func(tx *bolt.Tx) error {
+	_ = db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucketName)
 
 		for txID, outs := range FTX {
