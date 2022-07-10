@@ -103,10 +103,8 @@ func (tx Transaction) String() string {
 		lines = append(lines, fmt.Sprintf("       Script: %x", output.PubKeyHash))
 	}
 	if len(tx.Ipfs) > 0 {
-		lines = append(lines, fmt.Sprintf("     IPFS: %s | EXP: %s", tx.Ipfs[0].IpfsHashENC, time.Unix(tx.Ipfs[0].Exp, 0)))
-		for i, allowuser := range tx.Ipfs[0].PubKeyHash {
-			lines = append(lines, fmt.Sprintf("       User %d:  %x", i, allowuser))
-		}
+		lines = append(lines, fmt.Sprintf("     IPFS: %x | EXP: %s", tx.Ipfs[0].IpfsHashENC, time.Unix(tx.Ipfs[0].Exp, 0)))
+		lines = append(lines, fmt.Sprintf("       Script: %x", tx.Ipfs[0].PubKeyHash))
 	}
 
 	return strings.Join(lines, "\n")
@@ -158,7 +156,6 @@ func (tx *Transaction) Verify(bc *Blockchain) bool {
 		sigLen := len(vin.Signature)
 		r.SetBytes(vin.Signature[:(sigLen / 2)])
 		s.SetBytes(vin.Signature[(sigLen / 2):])
-
 		x := big.Int{}
 		y := big.Int{}
 		keyLen := len(vin.PubKey)
@@ -167,6 +164,7 @@ func (tx *Transaction) Verify(bc *Blockchain) bool {
 
 		dataToVerify := fmt.Sprintf("%x\n", txCopy)
 		hashToVerify := sha256.Sum256([]byte(dataToVerify))
+
 		rawPubKey := ecdsa.PublicKey{Curve: curve, X: &x, Y: &y}
 		if ecdsa.Verify(&rawPubKey, hashToVerify[:], &r, &s) == false {
 			return false

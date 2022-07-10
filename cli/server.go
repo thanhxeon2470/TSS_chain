@@ -327,6 +327,19 @@ func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom, localAddr 
 
 	fmt.Printf("Added block %x\n", block.Hash)
 
+	if len(blocksInTransit) > 0 {
+		blockHash := blocksInTransit[0]
+		SendGetData(addrFrom, "block", blockHash)
+
+		blocksInTransit = blocksInTransit[1:]
+
+	} else {
+		UTXOSet := blockchain.UTXOSet{bc}
+		FTXSet := blockchain.FTXset{bc}
+		UTXOSet.Reindex()
+		FTXSet.ReindexFTX()
+
+	}
 	if localAddr == knownNodes[0] {
 		for _, node := range knownNodes {
 			if node != localAddr && node != addrFrom {
@@ -336,18 +349,6 @@ func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom, localAddr 
 		}
 	}
 
-	if len(blocksInTransit) > 0 {
-		blockHash := blocksInTransit[0]
-		SendGetData(addrFrom, "block", blockHash)
-
-		blocksInTransit = blocksInTransit[1:]
-	} else {
-		UTXOSet := blockchain.UTXOSet{bc}
-		FTXSet := blockchain.FTXset{bc}
-		UTXOSet.Reindex()
-		FTXSet.ReindexFTX()
-
-	}
 }
 
 func handleInv(request []byte, bc *blockchain.Blockchain, addrFrom string) {
@@ -474,7 +475,7 @@ func MiningBlock(bc *blockchain.Blockchain, timeStart chan int64) {
 
 				if len(txs) == 0 {
 					fmt.Println("All transactions are invalid! Waiting for new ones...")
-					return
+					break
 				}
 
 				cbTx := blockchain.NewCoinbaseTX(miningAddress, "")
