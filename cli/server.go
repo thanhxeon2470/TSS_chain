@@ -135,6 +135,7 @@ func SendData(addr string, data []byte) {
 	if err != nil {
 		fmt.Printf("%s is not available\n", addr)
 		var updatedNodes []string
+		updatedNodes = append(updatedNodes, knownNodes[0])
 
 		for _, node := range knownNodes[1:] {
 			if node != addr {
@@ -249,6 +250,7 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 			return
 		}
 	}
+	fmt.Println(knownNodes)
 	if addrLocal == knownNodes[0] {
 		if !nodeIsKnown(addrFrom) {
 			knownNodes = append(knownNodes, addrFrom)
@@ -321,7 +323,11 @@ func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom, localAddr 
 
 	blockData := payload.Block
 	block := blockchain.DeserializeBlock(blockData)
+	if bc.IsBlockExist(block.Hash) {
+		fmt.Println("Recevied a block! But it's existed")
 
+		return
+	}
 	fmt.Println("Recevied a new block!")
 	bc.AddBlock(block)
 
@@ -340,14 +346,14 @@ func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom, localAddr 
 		FTXSet.ReindexFTX()
 
 	}
-	if localAddr == knownNodes[0] {
-		for _, node := range knownNodes {
-			if node != localAddr && node != addrFrom {
-				SendBlock(node, block)
-				fmt.Printf("This block is broadcasted to %s\n", node)
-			}
+	// if localAddr == knownNodes[0] {
+	for _, node := range knownNodes {
+		if node != localAddr && node != addrFrom {
+			SendBlock(node, block)
+			fmt.Printf("This block is broadcasted to %s\n", node)
 		}
 	}
+	// }
 
 }
 
@@ -438,13 +444,13 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 	tx := blockchain.DeserializeTransaction(txData)
 	mempool[hex.EncodeToString(tx.ID)] = tx
 
-	if addrLocal == knownNodes[0] {
-		for _, node := range knownNodes {
-			if node != addrLocal && node != addrFrom {
-				SendInv(node, "tx", [][]byte{tx.ID})
-			}
+	// if addrLocal == knownNodes[0] {
+	for _, node := range knownNodes {
+		if node != addrLocal && node != addrFrom {
+			SendInv(node, "tx", [][]byte{tx.ID})
 		}
 	}
+	// }
 	// root lamf wallet app chua chuyen file di duocj
 	fmt.Println("Time receive tx...", time.Now().Unix())
 
