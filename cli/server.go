@@ -135,6 +135,7 @@ func SendData(addr string, data []byte) {
 	if err != nil {
 		fmt.Printf("%s is not available\n", addr)
 		var updatedNodes []string
+		updatedNodes = append(updatedNodes, knownNodes[0])
 
 		for _, node := range knownNodes[1:] {
 			if node != addr {
@@ -249,6 +250,7 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 			return
 		}
 	}
+	fmt.Println(knownNodes)
 	if addrLocal == knownNodes[0] {
 		if !nodeIsKnown(addrFrom) {
 			knownNodes = append(knownNodes, addrFrom)
@@ -321,10 +323,17 @@ func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom, localAddr 
 
 	blockData := payload.Block
 	block := blockchain.DeserializeBlock(blockData)
+	if bc.IsBlockExist(block.Hash) {
+		fmt.Println("Recevied a block! But it's existed")
 
+		return
+	}
 	fmt.Println("Recevied a new block!")
 	bc.AddBlock(block)
-
+	UTXOSet := blockchain.UTXOSet{bc}
+	FTXSet := blockchain.FTXset{bc}
+	UTXOSet.Reindex()
+	FTXSet.ReindexFTX()
 	fmt.Printf("Added block %x\n", block.Hash)
 
 	if len(blocksInTransit) > 0 {
@@ -333,21 +342,16 @@ func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom, localAddr 
 
 		blocksInTransit = blocksInTransit[1:]
 
-	} else {
-		UTXOSet := blockchain.UTXOSet{bc}
-		FTXSet := blockchain.FTXset{bc}
-		UTXOSet.Reindex()
-		FTXSet.ReindexFTX()
-
 	}
-	if localAddr == knownNodes[0] {
-		for _, node := range knownNodes {
-			if node != localAddr && node != addrFrom {
-				SendBlock(node, block)
-				fmt.Printf("This block is broadcasted to %s\n", node)
-			}
+
+	// if localAddr == knownNodes[0] {
+	for _, node := range knownNodes {
+		if node != localAddr && node != addrFrom {
+			SendBlock(node, block)
+			fmt.Printf("This block is broadcasted to %s\n", node)
 		}
 	}
+	// }
 
 }
 
@@ -438,13 +442,14 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 	tx := blockchain.DeserializeTransaction(txData)
 	mempool[hex.EncodeToString(tx.ID)] = tx
 
-	if addrLocal == knownNodes[0] {
-		for _, node := range knownNodes {
-			if node != addrLocal && node != addrFrom {
-				SendInv(node, "tx", [][]byte{tx.ID})
-			}
+	// if addrLocal == knownNodes[0] {
+	for _, node := range knownNodes {
+		if node != addrLocal && node != addrFrom {
+			SendInv(node, "tx", [][]byte{tx.ID})
+			fmt.Printf("This transaction is broadcasted to %s\n", node)
 		}
 	}
+	// }
 	// root lamf wallet app chua chuyen file di duocj
 	fmt.Println("Time receive tx...", time.Now().Unix())
 
@@ -590,45 +595,17 @@ func StartServer(minerAddress string) {
 	defer ln.Close()
 	fmt.Println("Blockchain is listening at port ", port)
 
-	portRPC := fmt.Sprintf(":%s", os.Getenv("PORT_RPC"))
-	lnRpc, err := net.Listen(protocol, portRPC)
-	if err != nil {
-		log.Panic(err)
-	}
-	defer lnRpc.Close()
-	fmt.Println("Blockchain RPC is listening at port ", portRPC)
-
 	bc := blockchain.NewBlockchain()
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
-		os.Exit(1)
-	}
 
-	dif := 0
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				nodeAddress = fmt.Sprintf("%s:%s", ipnet.IP.String(), os.Getenv("PORT"))
-				dif += 1
-
-				if nodeAddress == knownNodes[0] {
-					break
-				}
-				dif -= 1
-			}
-		}
-	}
-
-	if dif == 0 {
-		SendVersion(knownNodes[0], bc)
+	for _, node := range knownNodes {
+		SendVersion(node, bc)
 	}
 	if len(minerAddress) > 0 {
 		// timeStartnode <- time.Now().Unix()
 		go MiningBlock(bc, timeReceivedTx)
 	}
 
-	go handleRPC(lnRpc)
+	go rpc.HandleRPC()
 
 	for {
 		conn, err := ln.Accept()
@@ -637,16 +614,6 @@ func StartServer(minerAddress string) {
 		}
 		go handleConnection(conn, bc)
 
-	}
-}
-
-func handleRPC(ln net.Listener) {
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			log.Panic(err)
-		}
-		go rpc.HandleRPC(conn)
 	}
 }
 
