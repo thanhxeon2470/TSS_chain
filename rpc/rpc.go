@@ -25,7 +25,7 @@ type Result struct {
 type RPC struct{}
 
 func (r *RPC) FindIPFS(args *Args, res *Result) error {
-	var payload findipfs
+	var payload Findipfs
 
 	err := GobDecode(args.Req, &payload)
 	if err != nil {
@@ -41,7 +41,7 @@ func (r *RPC) FindIPFS(args *Args, res *Result) error {
 }
 
 func (r *RPC) GetTxIns(args *Args, res *Result) error {
-	var payload gettxins
+	var payload Gettxins
 
 	err := GobDecode(args.Req, &payload)
 	if err != nil {
@@ -69,7 +69,7 @@ func (r *RPC) GetTxIns(args *Args, res *Result) error {
 }
 
 func (r *RPC) GetBlance(args *Args, res *Result) error {
-	var payload getbalance
+	var payload Getbalance
 
 	err := GobDecode(args.Req, &payload)
 	if err != nil {
@@ -107,14 +107,14 @@ func HandleRPC() {
 	log.Panic(http.ListenAndServe(portRPC, nil))
 }
 
-type findipfs struct {
+type Findipfs struct {
 	IpfsHashENC []byte
 }
 type Ipfs struct {
 	User map[string]bool
 }
 
-type getbalance struct {
+type Getbalance struct {
 	Addr string
 }
 type Balance struct {
@@ -122,7 +122,7 @@ type Balance struct {
 	FTXs  map[string]blockchain.InfoIPFS
 }
 
-type gettxins struct {
+type Gettxins struct {
 	Addr string
 }
 type Txins struct {
