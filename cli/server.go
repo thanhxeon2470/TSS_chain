@@ -22,13 +22,13 @@ const protocol = "tcp"
 const nodeVersion = 1
 const commandLength = 12
 
-var nodeAddress string
 var miningAddress string
 var StorageMiningAddress string
 var knownNodes = []string{}
 var blocksInTransit = [][]byte{}
 
 var mempool = make(map[string]blockchain.Transaction)
+var proposalPool = make(map[string]bool)
 var timeReceivedTx = make(chan int64)
 var timeMining int64 = 5 // 30s
 
@@ -185,13 +185,13 @@ func SendTx(addr string, tnx *blockchain.Transaction) {
 	SendData(addr, request)
 }
 
-func SendTxIns(addr string, txins *blockchain.TXInputs) {
-	data := txin{txins.Serialize()}
-	payload := gobEncode(data)
-	request := append(commandToBytes("tx"), payload...)
+// func SendTxIns(addr string, txins *blockchain.TXInputs) {
+// 	data := txin{txins.Serialize()}
+// 	payload := gobEncode(data)
+// 	request := append(commandToBytes("tx"), payload...)
 
-	SendData(addr, request)
-}
+// 	SendData(addr, request)
+// }
 
 func SendVersion(addr string, bc *blockchain.Blockchain) {
 	bestHeight := bc.GetBestHeight()
@@ -222,10 +222,14 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 	if err != nil {
 		log.Panic(err)
 	}
-
+	txid := hex.EncodeToString(payload.TxHash)
+	if proposalPool[txid] {
+		fmt.Println("Exist this proposal!")
+		return
+	}
 	// add file to ipfs when receive tx
 	if len(StorageMiningAddress) > 0 {
-		if bytes.Compare(payload.StorageMiningAddress, []byte(StorageMiningAddress)) == 0 {
+		if bytes.Equal(payload.StorageMiningAddress, []byte(StorageMiningAddress)) {
 			// Get file on ipfs
 			fh := string(payload.FileHash)
 			isSuccess, err := helper.IpfsGet(fh)
@@ -250,18 +254,18 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 			return
 		}
 	}
-	fmt.Println(knownNodes)
-	if addrLocal == knownNodes[0] {
-		if !nodeIsKnown(addrFrom) {
-			knownNodes = append(knownNodes, addrFrom)
-			fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
-		}
-		for _, node := range knownNodes {
-			if node != addrLocal && node != addrFrom {
-				SendProposal(node, payload)
-			}
+	proposalPool[txid] = true
+	// if addrLocal == knownNodes[0] {
+	if !nodeIsKnown(addrFrom) {
+		knownNodes = append(knownNodes, addrFrom)
+		fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
+	}
+	for _, node := range knownNodes {
+		if node != addrLocal && node != addrFrom {
+			SendProposal(node, payload)
 		}
 	}
+	// }
 }
 
 func handleFeedback(request []byte, addrFrom, addrLocal string) {
@@ -275,13 +279,21 @@ func handleFeedback(request []byte, addrFrom, addrLocal string) {
 	}
 	// proposalCheck = payload.Accept
 	// randomIdentity = payload.RandomIdentity
-	if addrLocal == knownNodes[0] {
-		for _, node := range knownNodes {
-			if node != addrLocal && node != addrFrom {
-				SendFBProposal(node, payload.TxHash, payload.Accept)
-			}
+	txid := hex.EncodeToString(payload.TxHash)
+	if proposalPool[txid] == false {
+		fmt.Println("Not exist this proposal")
+		return
+	}
+
+	delete(proposalPool, txid)
+
+	// if addrLocal == knownNodes[0] {
+	for _, node := range knownNodes {
+		if node != addrLocal && node != addrFrom {
+			SendFBProposal(node, payload.TxHash, payload.Accept)
 		}
 	}
+	// }
 	if len(mempool) > 0 {
 		// When received feedback proposal =>>> check this and send transaction
 		for id := range mempool {
@@ -605,7 +617,7 @@ func StartServer(minerAddress string) {
 		go MiningBlock(bc, timeReceivedTx)
 	}
 
-	go rpc.HandleRPC()
+	go rpc.HandleRPC(bc)
 
 	for {
 		conn, err := ln.Accept()

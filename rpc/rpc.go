@@ -24,6 +24,8 @@ type Result struct {
 
 type RPC struct{}
 
+var bc *blockchain.Blockchain
+
 func (r *RPC) FindIPFS(args *Args, res *Result) error {
 	var payload Findipfs
 
@@ -31,7 +33,7 @@ func (r *RPC) FindIPFS(args *Args, res *Result) error {
 	if err != nil {
 		return err
 	}
-	bc := blockchain.NewBlockchainView()
+	// bc := blockchain.NewBlockchainView()
 	FTXSet := blockchain.FTXset{bc}
 	defer bc.DB.Close()
 	listUser := FTXSet.FindIPFS(payload.IpfsHashENC)
@@ -53,7 +55,7 @@ func (r *RPC) GetTxIns(args *Args, res *Result) error {
 		return fmt.Errorf("ERROR: Recipient address is not valid")
 	}
 
-	bc := blockchain.NewBlockchainView()
+	// bc := blockchain.NewBlockchainView()
 	defer bc.DB.Close()
 
 	UTXOSet := blockchain.UTXOSet{bc}
@@ -80,7 +82,7 @@ func (r *RPC) GetBlance(args *Args, res *Result) error {
 	if !wallet.ValidateAddress(address) {
 		return fmt.Errorf("ERROR: Recipient address is not valid")
 	}
-	bc := blockchain.NewBlockchainView()
+	// bc := blockchain.NewBlockchainView()
 	UTXOSet := blockchain.UTXOSet{bc}
 	FTXSet := blockchain.FTXset{bc}
 	defer bc.DB.Close()
@@ -98,7 +100,20 @@ func (r *RPC) GetBlance(args *Args, res *Result) error {
 	return err
 }
 
-func HandleRPC() {
+func (r *RPC) SendProposal(args *Args, res *Result) error {
+	var payload Proposal
+
+	err := GobDecode(args.Req, &payload)
+	if err != nil {
+		return err
+	}
+
+	res.Res, err = GobEncode(Fbproposal{payload.TxHash, true})
+	return err
+}
+
+func HandleRPC(blockchain *blockchain.Blockchain) {
+	bc = blockchain
 	rpcRequest := new(RPC)
 	rpc.Register(rpcRequest)
 	rpc.HandleHTTP()
