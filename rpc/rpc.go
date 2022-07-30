@@ -37,7 +37,6 @@ func (r *RPC) FindIPFS(args *Args, res *Result) error {
 	}
 	// bc := blockchain.NewBlockchainView()
 	FTXSet := blockchain.FTXset{bc}
-	defer bc.DB.Close()
 	listUser := FTXSet.FindIPFS(payload.IpfsHashENC)
 	data := Ipfs{listUser}
 	res.Res, err = GobEncode(data)
@@ -58,8 +57,6 @@ func (r *RPC) GetTxIns(args *Args, res *Result) error {
 	}
 
 	// bc := blockchain.NewBlockchainView()
-	defer bc.DB.Close()
-
 	UTXOSet := blockchain.UTXOSet{bc}
 
 	pubKeyHash := utils.Base58Decode([]byte(address))
@@ -87,7 +84,6 @@ func (r *RPC) GetBlance(args *Args, res *Result) error {
 	// bc := blockchain.NewBlockchainView()
 	UTXOSet := blockchain.UTXOSet{bc}
 	FTXSet := blockchain.FTXset{bc}
-	defer bc.DB.Close()
 
 	balance := 0
 	pubKeyHash := utils.Base58Decode([]byte(address))
