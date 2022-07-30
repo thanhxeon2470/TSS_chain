@@ -488,8 +488,8 @@ func handleTx(request []byte, bc *blockchain.Blockchain) {
 	// if addrLocal == knownNodes[0] {
 	for _, node := range knownNodes {
 		if node != nodeIP && node != payload.AddrFrom {
+			fmt.Printf("This transaction will be broadcasted to %s\n", node)
 			SendInv(node, "tx", [][]byte{tx.ID})
-			fmt.Printf("This transaction is broadcasted to %s\n", node)
 		}
 	}
 	// }

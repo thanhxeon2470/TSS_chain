@@ -102,7 +102,7 @@ func (r *RPC) GetBlance(args *Args, res *Result) error {
 	return err
 }
 
-func (r *RPC) SendProposal(args *Args) error {
+func (r *RPC) SendProposal(args *Args, res *Result) error {
 	var payload Proposal
 
 	err := GobDecode(args.Req, &payload)
@@ -154,7 +154,7 @@ func (r *RPC) SendTx(args *Args, res *Result) error {
 	request := append(commandToBytes("tx"), payloadSend...)
 
 	SendData(thisNode, request)
-	return err
+	return nil
 }
 
 func HandleRPC(blockchain *blockchain.Blockchain) {
