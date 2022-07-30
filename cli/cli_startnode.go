@@ -18,7 +18,7 @@ type ipfsID struct {
 	Protocols       []string `json:"Protocols"`
 }
 
-func (cli *CLI) StartNode(minerAddress string) {
+func (cli *CLI) StartNode(thisNode, minerAddress string) {
 	fmt.Printf("Starting node\n")
 	if len(minerAddress) > 0 {
 		if wallet.ValidateAddress(minerAddress) {
@@ -39,5 +39,5 @@ func (cli *CLI) StartNode(minerAddress string) {
 			return
 		}
 	}
-	StartServer(minerAddress)
+	StartServer(thisNode, minerAddress)
 }

@@ -10,7 +10,6 @@ import (
 	"log"
 	"math/big"
 	"os"
-	"strings"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/helper"
@@ -127,10 +126,15 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 
 			return ""
 		}
-		proposal := Proposal{tx.ID, []byte(to), []byte(newIHash), amount}
-		SendProposal(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], proposal)
-		sendto := fmt.Sprint("127.0.0.1:", os.Getenv("PORT"))
-		SendTx(sendto, tx)
+		thisNode := os.Getenv("NODE_IP")
+		if thisNode == "" {
+			fmt.Printf("NODE_IP env. var is not set!")
+			os.Exit(1)
+		}
+		proposal := Proposal{thisNode, tx.ID, []byte(to), []byte(newIHash), amount}
+
+		SendProposal(thisNode, proposal)
+		SendTx(thisNode, tx)
 
 		return hex.EncodeToString(ct)
 	}

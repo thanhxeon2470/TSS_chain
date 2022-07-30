@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
+	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/rpc"
 	"os"
@@ -100,15 +102,58 @@ func (r *RPC) GetBlance(args *Args, res *Result) error {
 	return err
 }
 
-func (r *RPC) SendProposal(args *Args, res *Result) error {
+func (r *RPC) SendProposal(args *Args) error {
 	var payload Proposal
 
 	err := GobDecode(args.Req, &payload)
 	if err != nil {
 		return err
 	}
+	thisNode := os.Getenv("NODE_IP")
+	if thisNode == "" {
+		fmt.Printf("NODE_IP env. var is not set!")
+		os.Exit(1)
+	}
 
-	res.Res, err = GobEncode(Fbproposal{payload.TxHash, true})
+	pps := ProposalBlockchain{
+		thisNode,
+		payload.TxHash,
+		payload.StorageMiningAddress,
+		payload.FileHash,
+		payload.Amount}
+
+	payloadSend, err := GobEncode(pps)
+	if err != nil {
+		return err
+	}
+	request := append(commandToBytes("proposal"), payloadSend...)
+	SendData(thisNode, request)
+
+	return nil
+}
+
+func (r *RPC) SendTx(args *Args, res *Result) error {
+	var payload blockchain.Transaction
+
+	err := GobDecode(args.Req, &payload)
+	if err != nil {
+		return err
+	}
+
+	thisNode := os.Getenv("NODE_IP")
+	if thisNode == "" {
+		fmt.Printf("NODE_IP env. var is not set!")
+		os.Exit(1)
+	}
+	data := tx{thisNode, payload.Serialize()}
+
+	payloadSend, err := GobEncode(data)
+	if err != nil {
+		return err
+	}
+	request := append(commandToBytes("tx"), payloadSend...)
+
+	SendData(thisNode, request)
 	return err
 }
 
@@ -117,9 +162,19 @@ func HandleRPC(blockchain *blockchain.Blockchain) {
 	rpcRequest := new(RPC)
 	rpc.Register(rpcRequest)
 	rpc.HandleHTTP()
-	portRPC := fmt.Sprintf(":%s", os.Getenv("PORT_RPC"))
+	portRpc := os.Getenv("PORT_RPC")
+	if portRpc == "" {
+		fmt.Printf("PORT_RPC env. var is not set!")
+		os.Exit(1)
+	}
+	portRPC := fmt.Sprintf(":%s", portRpc)
 	fmt.Println("Blockchain RPC is listening at port ", portRPC)
 	log.Panic(http.ListenAndServe(portRPC, nil))
+}
+
+type tx struct {
+	AddrFrom    string
+	Transaction []byte
 }
 
 type Findipfs struct {
@@ -150,11 +205,42 @@ type Proposal struct {
 	FileHash             []byte
 	Amount               int
 }
+type ProposalBlockchain struct {
+	AddrFrom             string
+	TxHash               []byte
+	StorageMiningAddress []byte
+	FileHash             []byte
+	Amount               int
+}
 
 // feedback proposal
 type Fbproposal struct {
 	TxHash []byte
 	Accept bool
+}
+
+const commandLength = 12
+
+func commandToBytes(command string) []byte {
+	var bytes [commandLength]byte
+
+	for i, c := range command {
+		bytes[i] = byte(c)
+	}
+
+	return bytes[:]
+}
+
+const protocol = "tcp"
+
+func SendData(addr string, data []byte) {
+	conn, err := net.Dial(protocol, addr)
+	defer conn.Close()
+
+	_, err = io.Copy(conn, bytes.NewReader(data))
+	if err != nil {
+		log.Panic(err)
+	}
 }
 
 func GobEncode(data interface{}) ([]byte, error) {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
@@ -50,7 +49,12 @@ func (cli *CLI) Send(prkFrom, to string, amount int, mineNow bool) bool {
 
 			return false
 		}
-		SendTx(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], tx)
+		thisNode := os.Getenv("NODE_IP")
+		if thisNode == "" {
+			fmt.Printf("NODE_IP env. var is not set!")
+			os.Exit(1)
+		}
+		SendTx(thisNode, tx)
 	}
 
 	fmt.Println("Success!")

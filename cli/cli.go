@@ -35,11 +35,11 @@ func (cli *CLI) validateArgs() {
 func (cli *CLI) Run() {
 	cli.validateArgs()
 
-	// if nodeID == "" {
-	// 	fmt.Printf("NODE_ID env. var is not set!")
-	// 	os.Exit(1)
-	// }
-
+	thisNode := os.Getenv("NODE_IP")
+	if thisNode == "" {
+		fmt.Printf("NODE_IP env. var is not set!")
+		os.Exit(1)
+	}
 	getBalanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
 	createBlockchainCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
 	createWalletCmd := flag.NewFlagSet("createwallet", flag.ExitOnError)
@@ -231,6 +231,6 @@ func (cli *CLI) Run() {
 	}
 	if startNodeCmd.Parsed() {
 		StorageMiningAddress = *startNodeStorageMiner
-		cli.StartNode(*startNodeMiner)
+		cli.StartNode(thisNode, *startNodeMiner)
 	}
 }
