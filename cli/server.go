@@ -167,8 +167,8 @@ func SendInv(address, kind string, items [][]byte) {
 }
 
 func SendGetBlocks(address string) {
-	// payload := gobEncode(getblocks{nodeAddress})
-	request := commandToBytes("getblocks")
+	payload := gobEncode(getblocks{nodeIP})
+	request := append(commandToBytes("getblocks"), payload...)
 
 	SendData(address, request)
 }
@@ -355,11 +355,12 @@ func handleBlock(request []byte, bc *blockchain.Blockchain) {
 	FTXSet.ReindexFTX()
 	fmt.Printf("Added block %x\n", block.Hash)
 
-	if len(blocksInTransit) > 0 {
-		blockHash := blocksInTransit[0]
+	first := len(blocksInTransit)
+	if first > 0 {
+		blockHash := blocksInTransit[first-1]
 		SendGetData(payload.AddrFrom, "block", blockHash)
 
-		blocksInTransit = blocksInTransit[1:]
+		blocksInTransit = blocksInTransit[:first-1]
 
 	}
 
@@ -391,19 +392,18 @@ func handleInv(request []byte, bc *blockchain.Blockchain) {
 	fmt.Printf("Recevied inventory with %d %s\n", len(payload.Items), payload.Type)
 
 	if payload.Type == "block" {
-		blocksInTransit = payload.Items
-
-		blockHash := payload.Items[0]
-		SendGetData(payload.AddrFrom, "block", blockHash)
-
-		//doan nay vo dung
-		newInTransit := [][]byte{}
-		for _, b := range blocksInTransit {
-			if bytes.Compare(b, blockHash) != 0 {
-				newInTransit = append(newInTransit, b)
+		blocksInTransit = [][]byte{}
+		for _, hash := range payload.Items {
+			if !bc.IsBlockExist(hash) {
+				blocksInTransit = append(blocksInTransit, hash)
 			}
 		}
-		blocksInTransit = newInTransit
+
+		first := len(blocksInTransit) - 1
+		blockHash := blocksInTransit[first]
+		SendGetData(payload.AddrFrom, "block", blockHash)
+
+		blocksInTransit = blocksInTransit[:first]
 	}
 
 	if payload.Type == "tx" {
