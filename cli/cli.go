@@ -15,11 +15,12 @@ func (cli *CLI) printUsage() {
 	fmt.Println("Usage:")
 	fmt.Println("  createblockchain -address ADDRESS #-# Create a blockchain and send genesis block reward to ADDRESS")
 	fmt.Println("  createwallet #-# Generates a new key-pair and saves it into the wallet file")
+	fmt.Println("  genkeyp2p #-# enerates a new key P2P")
 	fmt.Println("  getbalance -address ADDRESS #-# Get balance of ADDRESS")
 	fmt.Println("  findipfs -ipfshash IPFSHASH #-# all addresses is allowed access ipfs")
 	fmt.Println("  printchain #-# Print all the blocks of the blockchain")
 	fmt.Println("  reindexutxo #-# Rebuilds the UTXO set")
-	fmt.Println("  send -from FROM -to TO -amount AMOUNT -allowuser ADDRESS -ipfshash IPFSHASH -mine #-# Send AMOUNT of coins from FROM address to TO. Mine on the same node, when -mine is set.")
+	fmt.Println("  send -from FROM -to TO -amount AMOUNT -allowuser ADDRESS -ipfshash IPFSHASH #-# Send AMOUNT of coins from FROM address to TO")
 	fmt.Println("  gettxin -address ADDRESS -amount AMOUNT #-# Get TX inputs in UTXO")
 	fmt.Println("  startnode -miner ADDRESS -storageminer ADDRESS #-# Start a node -miner enables mining")
 }
@@ -35,14 +36,10 @@ func (cli *CLI) validateArgs() {
 func (cli *CLI) Run() {
 	cli.validateArgs()
 
-	thisNode := os.Getenv("NODE_IP")
-	if thisNode == "" {
-		fmt.Printf("NODE_IP env. var is not set!")
-		os.Exit(1)
-	}
 	getBalanceCmd := flag.NewFlagSet("getbalance", flag.ExitOnError)
 	createBlockchainCmd := flag.NewFlagSet("createblockchain", flag.ExitOnError)
 	createWalletCmd := flag.NewFlagSet("createwallet", flag.ExitOnError)
+	genKeyP2PCmd := flag.NewFlagSet("genkeyp2p", flag.ExitOnError)
 	printChainCmd := flag.NewFlagSet("printchain", flag.ExitOnError)
 	reindexUTXOCmd := flag.NewFlagSet("reindexutxo", flag.ExitOnError)
 	sendCmd := flag.NewFlagSet("send", flag.ExitOnError)
@@ -64,7 +61,6 @@ func (cli *CLI) Run() {
 	sendFrom := sendCmd.String("from", "", "Source wallet private key")
 	sendTo := sendCmd.String("to", "", "Destination wallet address")
 	sendAmount := sendCmd.Int("amount", 0, "Amount to send")
-	sendMine := sendCmd.Bool("mine", false, "Mine immediately on the same node")
 
 	getTxAddr := getTxCmd.String("address", "", "Address to get TX inputs in UTXO")
 	getTxAmount := getTxCmd.Int("amount", 0, "Amount to get TX inputs in UTXO")
@@ -99,6 +95,11 @@ func (cli *CLI) Run() {
 		}
 	case "createwallet":
 		err := createWalletCmd.Parse(os.Args[2:])
+		if err != nil {
+			log.Panic(err)
+		}
+	case "genkeyp2p":
+		err := genKeyP2PCmd.Parse(os.Args[2:])
 		if err != nil {
 			log.Panic(err)
 		}
@@ -176,6 +177,10 @@ func (cli *CLI) Run() {
 		cli.CreateWallet()
 	}
 
+	if genKeyP2PCmd.Parsed() {
+		cli.GenerateKeyPairP2P()
+	}
+
 	if findIPFSCmd.Parsed() {
 		if *findIPFSHash == "" {
 			findIPFSCmd.Usage()
@@ -197,7 +202,7 @@ func (cli *CLI) Run() {
 			sendCmd.Usage()
 			os.Exit(1)
 		}
-		cli.Send(*sendFrom, *sendTo, *sendAmount, *sendMine)
+		cli.Send(*sendFrom, *sendTo, *sendAmount)
 	}
 
 	if getTxCmd.Parsed() {
@@ -231,6 +236,6 @@ func (cli *CLI) Run() {
 	}
 	if startNodeCmd.Parsed() {
 		StorageMiningAddress = *startNodeStorageMiner
-		cli.StartNode(thisNode, *startNodeMiner)
+		cli.StartNode("thisNode", *startNodeMiner)
 	}
 }

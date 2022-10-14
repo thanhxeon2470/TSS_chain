@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"encoding/gob"
 	"fmt"
-	"io"
 	"log"
-	"net"
 	"net/http"
 	"net/rpc"
 	"os"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
+	"github.com/thanhxeon2470/TSS_chain/p2p"
 	"github.com/thanhxeon2470/TSS_chain/utils"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
@@ -105,14 +104,9 @@ func (r *RPC) SendProposal(args *Args, res *Result) error {
 	if err != nil {
 		return err
 	}
-	thisNode := os.Getenv("NODE_IP")
-	if thisNode == "" {
-		fmt.Printf("NODE_IP env. var is not set!")
-		os.Exit(1)
-	}
 
 	pps := ProposalBlockchain{
-		thisNode,
+		"thisNode",
 		payload.TxHash,
 		payload.StorageMiningAddress,
 		payload.FileHash,
@@ -123,7 +117,7 @@ func (r *RPC) SendProposal(args *Args, res *Result) error {
 		return err
 	}
 	request := append(commandToBytes("proposal"), payloadSend...)
-	SendData(thisNode, request)
+	SendData(request)
 
 	return nil
 }
@@ -136,12 +130,7 @@ func (r *RPC) SendTx(args *Args, res *Result) error {
 		return err
 	}
 
-	thisNode := os.Getenv("NODE_IP")
-	if thisNode == "" {
-		fmt.Printf("NODE_IP env. var is not set!")
-		os.Exit(1)
-	}
-	data := tx{thisNode, payload.Serialize()}
+	data := tx{"thisNode", payload.Serialize()}
 
 	payloadSend, err := GobEncode(data)
 	if err != nil {
@@ -149,7 +138,7 @@ func (r *RPC) SendTx(args *Args, res *Result) error {
 	}
 	request := append(commandToBytes("tx"), payloadSend...)
 
-	SendData(thisNode, request)
+	SendData(request)
 	return nil
 }
 
@@ -229,14 +218,8 @@ func commandToBytes(command string) []byte {
 
 const protocol = "tcp"
 
-func SendData(addr string, data []byte) {
-	conn, err := net.Dial(protocol, addr)
-	defer conn.Close()
-
-	_, err = io.Copy(conn, bytes.NewReader(data))
-	if err != nil {
-		log.Panic(err)
-	}
+func SendData(data []byte) {
+	p2p.Send2Peers(data)
 }
 
 func GobEncode(data interface{}) ([]byte, error) {

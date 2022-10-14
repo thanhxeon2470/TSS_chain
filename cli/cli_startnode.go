@@ -39,5 +39,5 @@ func (cli *CLI) StartNode(thisNode, minerAddress string) {
 			return
 		}
 	}
-	StartServer(thisNode, minerAddress)
+	StartServer(minerAddress)
 }

@@ -377,6 +377,7 @@ func (bc *Blockchain) GetBlockHashes() [][]byte {
 func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 	var lastHash []byte
 	var lastHeight int
+	firstMiner := false
 
 	for _, tx := range transactions {
 		// TODO: ignore transaction if it's not valid
@@ -401,6 +402,27 @@ func (bc *Blockchain) MineBlock(transactions []*Transaction) *Block {
 	}
 
 	newBlock := NewBlock(transactions, lastHash, lastHeight+1)
+	err = bc.DB.View(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte(blocksBucket))
+		lastHash = b.Get([]byte("l"))
+
+		blockData := b.Get(lastHash)
+		block := DeserializeBlock(blockData)
+
+		if block.Height == lastHeight {
+			firstMiner = true
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		log.Panic(err)
+	}
+
+	if !firstMiner {
+		return nil
+	}
 
 	err = bc.DB.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))

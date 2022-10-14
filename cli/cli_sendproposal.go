@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
+	"github.com/thanhxeon2470/TSS_chain/p2p"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 
 	"github.com/ethereum/go-ethereum/crypto/ecies"
@@ -44,15 +46,18 @@ func (cli *CLI) SendProposal(prkFrom, to string, amount int, iHash string) strin
 
 		return ""
 	}
-	thisNode := os.Getenv("NODE_IP")
-	if thisNode == "" {
-		fmt.Printf("NODE_IP env. var is not set!")
+	proposal := Proposal{tx.ID, []byte(to), []byte(iHash), amount}
+
+	nodes := os.Getenv("BOOTSNODES")
+	if nodes == "" {
+		fmt.Printf("BOOTSNODES env. var is not set!")
 		os.Exit(1)
 	}
-	proposal := Proposal{thisNode, tx.ID, []byte(to), []byte(iHash), amount}
+	bootsNodestmp := strings.Split(nodes, "_")
+	p2p.InitP2P(0, bootsNodestmp, false)
 
-	SendProposal(thisNode, proposal)
-	SendTx(thisNode, tx)
+	SendProposal(proposal)
+	SendTx(tx)
 
 	return hex.EncodeToString(ct)
 }
