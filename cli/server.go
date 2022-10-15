@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
@@ -10,11 +11,13 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"strings"
 	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/helper"
+	"github.com/thanhxeon2470/TSS_chain/rpc"
 )
 
 const protocol = "tcp"
@@ -600,6 +603,17 @@ func StartServer(minerAddress string) {
 	if err != nil {
 		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
 		os.Exit(1)
+	}
+
+	s := rpc.InitJSONRPCServer(":8332")
+
+	ctxbc := context.WithValue(context.Background(), rpc.Bckey, bc)
+	ctx, cancel := signal.NotifyContext(ctxbc, os.Interrupt, os.Kill)
+	// ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+	fmt.Println("RPC server(standard) running on Port: 8332")
+	if err := s.Run(ctx); err != nil {
+		log.Fatal(err)
 	}
 
 	dif := 0
