@@ -15,7 +15,6 @@ import (
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/helper"
-	"github.com/thanhxeon2470/TSS_chain/rpc"
 )
 
 const protocol = "tcp"
@@ -626,7 +625,7 @@ func StartServer(minerAddress string) {
 		go MiningBlock(bc, timeReceivedTx)
 	}
 
-	go handleRPC(lnRpc)
+	// go handleRPC(lnRpc)
 
 	for {
 		conn, err := ln.Accept()
@@ -638,15 +637,15 @@ func StartServer(minerAddress string) {
 	}
 }
 
-func handleRPC(ln net.Listener) {
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			log.Panic(err)
-		}
-		go rpc.HandleRPC(conn)
-	}
-}
+// func handleRPC(ln net.Listener) {
+// 	for {
+// 		conn, err := ln.Accept()
+// 		if err != nil {
+// 			log.Panic(err)
+// 		}
+// 		go rpc.HandleRPC(conn)
+// 	}
+// }
 
 func gobEncode(data interface{}) []byte {
 	var buff bytes.Buffer
