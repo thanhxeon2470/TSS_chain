@@ -606,6 +606,7 @@ func StartServer(minerAddress string) {
 	}
 
 	s := rpc.InitJSONRPCServer(":8332")
+	// bcv:= blockchain.NewBlockchainView()
 
 	ctxbc := context.WithValue(context.Background(), rpc.Bckey, bc)
 	ctx, cancel := signal.NotifyContext(ctxbc, os.Interrupt, os.Kill)

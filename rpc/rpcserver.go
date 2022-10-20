@@ -62,6 +62,7 @@ func InitJSONRPCServer(uri string) *rpc.RpcServer {
 		rpc.WithMiddleware(middleware.Logger(rpc.StdLogger)))
 
 	s.Register("getblock", rpc.H(handleGetblock))
+	s.Register("getblockhash", rpc.H(handleGetBlockhash))
 	s.Register("getbestblockhash", rpc.HS(handleGetBestBlockhash))
 	s.Register("getblockcount", rpc.HS(handleGetblockcount))
 	s.Register("validateaddress", rpc.H(handleValidateaddress))
@@ -89,7 +90,7 @@ func InitJSONRPCServer(uri string) *rpc.RpcServer {
 func handleGetblock(ctx context.Context, rawparams *Params) (interface{}, error) {
 
 	// cast params from request
-	params := GetBlock{Verbose: 0}
+	params := GetBlock{Verbose: 1}
 	err := CastParamsTo(rawparams, &params, 1, 2)
 	if err != nil {
 		return nil, err
@@ -119,12 +120,28 @@ func handleGetblock(ctx context.Context, rawparams *Params) (interface{}, error)
 	if params.Verbose == 0 {
 		return DataToHex(result)
 	} else {
-		return result, nil
+		if params.Verbose == 2 {
+			txs := []TxRawResult{}
+			for _, tx := range blockdata.Transactions {
+
+				prms := &Params{hex.EncodeToString(tx.ID), true}
+				txdata, err := handleGetrawtransaction(ctx, prms)
+				if err != nil {
+					return nil, err
+				}
+				txs = append(txs, txdata.(TxRawResult))
+			}
+			result.Transactions = txs
+			return result, nil
+		} else {
+			return result, nil
+
+		}
 	}
 
 }
 
-func BlockDataToResp(T blockchain.Block, verbose int) (BlockDataResp, error) {
+func BlockDataToResp(T blockchain.Block, verbose float64) (BlockDataResp, error) {
 	resp := BlockDataResp{}
 
 	hash, err := BytesToHex(T.Hash)
@@ -170,7 +187,7 @@ func BlockDataToResp(T blockchain.Block, verbose int) (BlockDataResp, error) {
 
 	resp.ChainWork = "1d1d1d1d1d"
 
-	resp.PrevBlockHash = Hex(T.PrevBlockHash)
+	resp.PrevBlockHash = Hex(hex.EncodeToString(T.PrevBlockHash))
 
 	return resp, nil
 
@@ -333,9 +350,9 @@ func handleGettxout(ctx context.Context, rawparams *Params) (interface{}, error)
 		errStr := fmt.Sprintf("Output  for txid: %s does not exist", params.TxId)
 		return nil, NewRPCError(ErrRPCNoTxInfo, errStr)
 	}
-	vout := params.Vout
+	vout := int(params.Vout)
 	if err != nil {
-		return nil, NewRPCError(ErrRPCInvalidTxVout, fmt.Sprintf("Output index: %d  for txid: %s does not exist", params.Vout, params.TxId))
+		return nil, NewRPCError(ErrRPCInvalidTxVout, fmt.Sprintf("Output index: %d  for txid: %s does not exist", vout, params.TxId))
 	}
 	txout := txouts[vout]
 	isCoinbase := tx.IsCoinbase()
@@ -350,7 +367,13 @@ func handleGettransaction(ctx context.Context, rawparams *Params) (interface{}, 
 	params := GetTransaction{}
 	CastParamsTo(rawparams, &params, 1, 3)
 
-	tx, err := bc.FindTransaction([]byte(params.TxId))
+	txid, err := HashToBytes(params.TxId)
+	if err != nil {
+
+		return nil, err
+	}
+
+	tx, err := bc.FindTransaction(txid)
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +383,7 @@ func handleGettransaction(ctx context.Context, rawparams *Params) (interface{}, 
 		return nil, err
 	}
 
-	block, err := FindBlockHasTx(bc, params.TxId)
+	block, err := FindBlockHasTx(bc, txid)
 	if err != nil {
 		return nil, err
 	}
@@ -378,20 +401,20 @@ func handleGettransaction(ctx context.Context, rawparams *Params) (interface{}, 
 	res.Fee = amount_inp - amount_out
 	res.Confirmations = best.Height - block.Height
 	res.BIP125_Replaceable = "no"
-	res.BlockHash = Hex(block.Hash)
+	res.BlockHash = Hex(hex.EncodeToString(block.Hash))
 	res.BlockHeight = block.Height
-	res.Comment = "cc"
+	res.Comment = ""
 	res.Decoded, _ = DataToHex(tx)
 	res.Generated = true
 	res.Time = block.Timestamp
 	res.TimeReceived = block.Timestamp
 	res.Trusted = true
-	res.TxID = Hex(tx.ID)
+	res.TxID = Hex(hex.EncodeToString(tx.ID))
 	res.WalletConflicts = []string{}
 	return res, nil
 }
 
-func FindBlockHasTx(bc *blockchain.Blockchain, txid string) (*blockchain.Block, error) {
+func FindBlockHasTx(bc *blockchain.Blockchain, txid []byte) (*blockchain.Block, error) {
 	bci := bc.Iterator()
 
 	for {
@@ -407,7 +430,7 @@ func FindBlockHasTx(bc *blockchain.Blockchain, txid string) (*blockchain.Block, 
 			break
 		}
 	}
-	return &blockchain.Block{}, nil
+	return nil, fmt.Errorf("Xu nhu cc")
 
 }
 
@@ -419,8 +442,15 @@ func handleGetrawtransaction(ctx context.Context, rawparams *Params) (interface{
 	CastParamsTo(rawparams, &params, 1, 3)
 	block := blockchain.Block{}
 	bestH := bc.GetBestHeight()
+
+	txid, err := HashToBytes(params.Txid)
+	if err != nil {
+
+		return nil, err
+	}
+
 	if params.BlockHash == "" {
-		_block, err := FindBlockHasTx(bc, params.Txid)
+		_block, err := FindBlockHasTx(bc, txid)
 		if err != nil {
 			return nil, err
 		}
@@ -434,7 +464,7 @@ func handleGetrawtransaction(ctx context.Context, rawparams *Params) (interface{
 	}
 	var txp *blockchain.Transaction
 	for _, _tx := range block.Transactions {
-		if bytes.Equal(_tx.ID, []byte(params.Txid)) {
+		if bytes.Equal(_tx.ID, []byte(txid)) {
 			txp = _tx
 			break
 		}
@@ -443,28 +473,50 @@ func handleGetrawtransaction(ctx context.Context, rawparams *Params) (interface{
 		return nil, NewRPCError(ErrRPCNoTxInfo, "Transaction Not FOUND!!")
 	}
 
+	vinresult := []Vin{}
+
 	// tx, err := bc.FindTransaction([]byte(params.Txid))
 	tx := *txp
+
+	for _, vin := range tx.Vin {
+		_vin, err := Vin2Result(tx, vin)
+		if err != nil {
+			return nil, err
+		}
+		vinresult = append(vinresult, *_vin)
+	}
+
+	voutresult := []Vout{}
+
+	for _, vout := range tx.Vout {
+		_vout, err := Vout2Result(tx, vout)
+		if err != nil {
+			return nil, err
+		}
+
+		voutresult = append(voutresult, *_vout)
+
+	}
 	res := TxRawResult{}
-	res.Hex = string(tx.ID)
-	res.Txid = string(tx.ID)
-	res.Hash = string(tx.ID)
+	res.Hex = hex.EncodeToString(txid)
+	res.Txid = res.Hex
+	res.Hash = res.Hex
 	res.Size = 128
 	res.Vsize = res.Size
 	res.Weight = res.Vsize * 4
 	res.Version = 100000000
 	res.LockTime = 0
-	res.Vin = tx.Vin
-	res.Vout = tx.Vout
+	res.Vin = vinresult
+	res.Vout = voutresult
 	res.BlockHash = hex.EncodeToString(block.Hash)
 	res.Confirmations = uint64(bestH) - uint64(block.Height)
 	res.Time = 0
 	res.Blocktime = block.Timestamp
-	if !params.Verbose {
+	if params.Verbose {
 
 		return res, nil
 	} else {
-		return DataToHex(res)
+		return DataToHex(tx)
 	}
 
 }
@@ -520,7 +572,63 @@ func handleGetmempoolinfo(ctx context.Context) (interface{}, error) {
 }
 
 func handleGetmempoolentry(ctx context.Context, rawparams *Params) (interface{}, error) {
-	return nil, nil
+	bc := ctx.Value(Bckey).(*blockchain.Blockchain)
+
+	param := (*rawparams)[0].(string)
+
+	txid, err := HashToBytes(param)
+	if err != nil {
+		return nil, err
+	}
+
+	block, err := FindBlockHasTx(bc, txid)
+	if err != nil {
+		return nil, err
+	}
+
+	txp := &blockchain.Transaction{}
+	for _, _tx := range block.Transactions {
+		if bytes.Equal(txid, _tx.ID) {
+			txp = _tx
+		}
+	}
+
+	tx := *txp
+	amount_inp := 0
+	for _, txinp := range tx.Vin {
+		amount_inp += txinp.Vout
+	}
+
+	amount_out := 0
+	for _, txout := range tx.Vout {
+		amount_out += txout.Value
+	}
+
+	res := MempoolEntryResult{
+		Vsize:           128,
+		Weight:          128 * 4,
+		Fee:             float64(amount_inp) - float64(amount_out),
+		ModifiedFee:     0,
+		Time:            int(block.Timestamp),
+		Height:          block.Height,
+		Descendantcount: 0,
+		Descendantsize:  0,
+		Descendantfees:  0,
+		Ancestorcount:   0,
+		Ancestorsize:    0,
+		Ancestorfees:    0,
+		Wtxid:           "",
+		Fees: FeeResults{
+			Base:       float64(amount_inp) - float64(amount_out),
+			Modified:   0,
+			Ancestor:   0,
+			Descendant: 0,
+		},
+		Bip125Replaceable: false,
+		Unbroadcast:       false,
+	}
+
+	return res, nil
 }
 
 // func handleGetinfo(ctx context.Context, rawparams *Params) (interface{}, error) {
@@ -555,18 +663,19 @@ func handleGetchaintips(ctx context.Context) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	res := struct {
+	type chaintips struct {
 		Height    uint   `json:"height"`
 		Hash      Hex    `json:"hash"`
 		BranchLen int    `json:"branchlen"`
 		Status    string `json:"status"`
-	}{
+	}
+	res := chaintips{
 		Height:    uint(best.Height),
 		Hash:      Hex(hex.EncodeToString(best.Hash)),
 		BranchLen: 0,
 		Status:    "active",
 	}
-	return res, nil
+	return []chaintips{res}, nil
 }
 
 func handleGetblockheader(ctx context.Context, rawparams *Params) (interface{}, error) {
@@ -593,7 +702,7 @@ func handleGetblockheader(ctx context.Context, rawparams *Params) (interface{}, 
 		return nil, NewRPCError(ErrRPCInternal.Code, err.Error())
 	}
 	blockdata.Transactions = nil
-	tmp := 0
+	tmp := float64(0)
 	if params.Verbose {
 		tmp = 1
 	}
@@ -628,17 +737,39 @@ func handleDecoderawtransaction(ctx context.Context, rawparams *Params) (interfa
 	if err != nil {
 		return nil, NewRPCError(ErrRPCDecodeHexString, err.Error())
 	}
+	var vinresult []Vin
+
+	for _, vin := range tx.Vin {
+		_vin, err := Vin2Result(tx, vin)
+		if err != nil {
+			return nil, err
+		}
+		vinresult = append(vinresult, *_vin)
+	}
+
+	voutresult := []Vout{}
+
+	for _, vout := range tx.Vout {
+		_vout, err := Vout2Result(tx, vout)
+		if err != nil {
+			return nil, err
+		}
+
+		voutresult = append(voutresult, *_vout)
+
+	}
+
 	res := TxRawResult{}
-	res.Hex = string(tx.ID)
-	res.Txid = string(tx.ID)
-	res.Hash = string(tx.ID)
+	res.Hex = hex.EncodeToString(tx.ID)
+	res.Txid = res.Hex
+	res.Hash = res.Hex
 	res.Size = 128
 	res.Vsize = res.Size
 	res.Weight = res.Vsize * 4
 	res.Version = 100000000
 	res.LockTime = 0
-	res.Vin = tx.Vin
-	res.Vout = tx.Vout
+	res.Vin = vinresult
+	res.Vout = voutresult
 	res.Time = 0
 	return res, nil
 }
@@ -737,7 +868,11 @@ func handleListtransactions(ctx context.Context, rawparams *Params) (interface{}
 	utxoSets := bc.FindUTXO()
 	res := []TransactionData{}
 	for txid := range utxoSets {
-		block, err := FindBlockHasTx(bc, txid)
+		txid_byte, err := HashToBytes(txid)
+		if err != nil {
+			return nil, err
+		}
+		block, err := FindBlockHasTx(bc, txid_byte)
 		if err != nil {
 			return nil, err
 		}
@@ -808,4 +943,17 @@ func handleGetblockchaininfo(ctx context.Context) (interface{}, error) {
 	}
 
 	return res, nil
+}
+
+func handleGetBlockhash(ctx context.Context, rawparams *Params) (interface{}, error) {
+	height := int((*rawparams)[0].(float64))
+
+	bc := ctx.Value(Bckey).(*blockchain.Blockchain)
+
+	block, err := bc.GetBlockByNumber(height)
+	if err != nil {
+		return nil, err
+	}
+	return hex.EncodeToString(block.Hash), nil
+
 }

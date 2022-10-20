@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/thanhxeon2470/TSS_chain/blockchain"
 )
 
 func HashToBytes(hash string) ([]byte, error) {
@@ -28,7 +30,7 @@ func BytesToHex(rawData []byte) (string, error) {
 	if len(rawData) == 0 {
 		return "", fmt.Errorf("EMPTY BYTES")
 	}
-	data := "0x" + hex.EncodeToString(rawData)
+	data := hex.EncodeToString(rawData)
 
 	return data, nil
 }
@@ -95,4 +97,45 @@ func HexUnmarshal(input string, T interface{}) error {
 func DataToObject(data []byte, T interface{}) (interface{}, error) {
 	err := json.Unmarshal(data, &T)
 	return T, err
+}
+
+func Vin2Result(tx blockchain.Transaction, vin blockchain.TXInput) (*Vin, error) {
+	sig, _ := BytesToHex(vin.Signature)
+	coinbase := tx.IsCoinbase()
+	res := Vin{
+		Txid:      hex.EncodeToString(vin.Txid),
+		Vout:      uint32(vin.Vout),
+		Sequence:  0,
+		Witness:   nil,
+		ScriptSig: ScriptSig{Asm: "tss", Hex: sig},
+		Coinbase:  fmt.Sprint(coinbase),
+	}
+	return &res, nil
+
+}
+
+func Vout2Result(tx blockchain.Transaction, vout blockchain.TXOutput) (*Vout, error) {
+
+	hash, err := BytesToHex(vout.PubKeyHash)
+	if err != nil {
+		return nil, err
+	}
+	res := Vout{
+		Value: float64(vout.Value),
+		ScriptPubKey: ScriptPubKeyResult{
+			Asm:     "TSS",
+			Hex:     hash,
+			ReqSigs: 1,
+			Type:    "pubkeyhash",
+		},
+	}
+
+	for i, _vout := range tx.Vout {
+		if bytes.Equal(_vout.PubKeyHash, vout.PubKeyHash) {
+			res.N = uint32(i)
+			return &res, nil
+		}
+	}
+
+	return nil, NewRPCError(ErrRPCInvalidTxVout, "cant find vout")
 }
