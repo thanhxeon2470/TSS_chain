@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/p2p"
@@ -32,7 +33,7 @@ func (cli *CLI) SendProposal(prkFrom, to string, amount int, iHash string) strin
 
 	bc := blockchain.NewBlockchainView()
 	defer bc.DB.Close()
-	UTXOSet := blockchain.UTXOSet{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
 
 	prkECIES := ecies.ImportECDSA(&w.PrivateKey)
 	ct, err := ecies.Encrypt(rand.Reader, &prkECIES.PublicKey, []byte(iHash), nil, nil)
@@ -55,9 +56,10 @@ func (cli *CLI) SendProposal(prkFrom, to string, amount int, iHash string) strin
 	}
 	bootsNodestmp := strings.Split(nodes, "_")
 	p2p.InitP2P(0, bootsNodestmp, false)
+	time.Sleep(2 * time.Second)
 
 	SendProposal(proposal)
 	SendTx(tx)
-
+	time.Sleep(time.Second)
 	return hex.EncodeToString(ct)
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/p2p"
@@ -27,7 +28,7 @@ func (cli *CLI) Send(prkFrom, to string, amount int) bool {
 
 	bc := blockchain.NewBlockchainView()
 	defer bc.DB.Close()
-	UTXOSet := blockchain.UTXOSet{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
 	tx := blockchain.NewUTXOTransaction(w, to, amount, nil, nil, &UTXOSet)
 	if tx == nil {
 		fmt.Println("Fail to create transaction!")
@@ -41,8 +42,9 @@ func (cli *CLI) Send(prkFrom, to string, amount int) bool {
 	}
 	bootsNodestmp := strings.Split(nodes, "_")
 	p2p.InitP2P(0, bootsNodestmp, false)
+	time.Sleep(2 * time.Second)
 	SendTx(tx)
-
+	time.Sleep(time.Second)
 	fmt.Println("Success!")
 	return true
 }

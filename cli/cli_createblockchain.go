@@ -15,8 +15,8 @@ func (cli *CLI) CreateBlockchain(address string) {
 	bc := blockchain.CreateBlockchain(address)
 	defer bc.DB.Close()
 
-	UTXOSet := blockchain.UTXOSet{bc}
-	FTXSet := blockchain.FTXset{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
+	FTXSet := blockchain.FTXset{Blockchain: bc}
 	UTXOSet.Reindex()
 	FTXSet.ReindexFTX()
 

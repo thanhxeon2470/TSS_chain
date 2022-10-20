@@ -9,14 +9,14 @@ import (
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
-type ipfsID struct {
-	ID              string   `json:"ID"`
-	PublicKey       string   `json:"PublicKey"`
-	Addresses       []string `json:"Addresses"`
-	AgentVersion    string   `json:"AgentVersion"`
-	ProtocolVersion string   `json:"ProtocolVersion"`
-	Protocols       []string `json:"Protocols"`
-}
+// type ipfsID struct {
+// 	ID              string   `json:"ID"`
+// 	PublicKey       string   `json:"PublicKey"`
+// 	Addresses       []string `json:"Addresses"`
+// 	AgentVersion    string   `json:"AgentVersion"`
+// 	ProtocolVersion string   `json:"ProtocolVersion"`
+// 	Protocols       []string `json:"Protocols"`
+// }
 
 func (cli *CLI) StartNode(thisNode, minerAddress string) {
 	fmt.Printf("Starting node\n")

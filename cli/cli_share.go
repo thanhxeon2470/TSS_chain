@@ -11,6 +11,7 @@ import (
 	"math/big"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/helper"
@@ -38,7 +39,7 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 	bc := blockchain.NewBlockchainView()
 	defer bc.DB.Close()
 
-	UTXOSet := blockchain.UTXOSet{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
 
 	curve := elliptic.P256()
 	pubKey := utils.Base58Decode([]byte(pubkeyallowuser))
@@ -137,9 +138,11 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 		}
 		bootsNodestmp := strings.Split(nodes, "_")
 		p2p.InitP2P(0, bootsNodestmp, false)
+		time.Sleep(2 * time.Second)
 
 		SendProposal(proposal)
 		SendTx(tx)
+		time.Sleep(time.Second)
 
 		return hex.EncodeToString(ct)
 	}

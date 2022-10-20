@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/libp2p/go-libp2p"
-	"github.com/libp2p/go-libp2p-core/crypto"
+	"github.com/libp2p/go-libp2p/core/crypto"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/thanhxeon2470/TSS_chain/p2p"
 )
@@ -33,5 +33,4 @@ func (cli *CLI) GenerateKeyPairP2P() {
 	if err != nil {
 		log.Error(err)
 	}
-	return
 }

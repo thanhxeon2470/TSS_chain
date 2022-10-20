@@ -8,8 +8,8 @@ import (
 
 func (cli *CLI) ReindexUTXO() {
 	bc := blockchain.NewBlockchain()
-	UTXOSet := blockchain.UTXOSet{bc}
-	FTXSet := blockchain.FTXset{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
+	FTXSet := blockchain.FTXset{Blockchain: bc}
 	UTXOSet.Reindex()
 	FTXSet.ReindexFTX()
 	count := UTXOSet.CountTransactions()

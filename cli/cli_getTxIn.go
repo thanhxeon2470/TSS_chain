@@ -18,14 +18,14 @@ func (cli *CLI) GetTxIn(addr string, amount int) blockchain.TXInputs {
 	bc := blockchain.NewBlockchainView()
 	defer bc.DB.Close()
 
-	UTXOSet := blockchain.UTXOSet{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
 
 	pubKeyHash := utils.Base58Decode([]byte(addr))
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-wallet.AddressChecksumLen]
 
 	acc, validOutputs := UTXOSet.FindSpendableOutputs(pubKeyHash, amount)
 
-	res := blockchain.TXInputs{nil}
+	res := blockchain.TXInputs{Inputs: nil}
 	if acc < amount {
 		log.Panic("ERROR: Not enough funds")
 		return res
@@ -38,7 +38,7 @@ func (cli *CLI) GetTxIn(addr string, amount int) blockchain.TXInputs {
 		}
 
 		for _, out := range outs {
-			input := blockchain.TXInput{txID, out, nil, nil}
+			input := blockchain.TXInput{Txid: txID, Vout: out, Signature: nil, PubKey: nil}
 			res.Inputs = append(res.Inputs, input)
 
 			fmt.Println(hex.EncodeToString(txID), " ==== ", out)

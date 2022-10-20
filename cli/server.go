@@ -17,13 +17,11 @@ import (
 	"github.com/thanhxeon2470/TSS_chain/rpc"
 )
 
-const protocol = "tcp"
 const nodeVersion = 1
 const commandLength = 12
 
 var miningAddress string
 var StorageMiningAddress string
-var nodeIP string
 var bootsNodes = []string{}
 var blocksInTransit = [][]byte{}
 
@@ -57,11 +55,6 @@ type inv struct {
 type tx struct {
 	// AddrFrom    string
 	Transaction []byte
-}
-
-type txin struct {
-	// AddrFrom string
-	Inputs []byte
 }
 
 type verzion struct {
@@ -104,7 +97,7 @@ func BytesToCommand(bytes []byte) string {
 		}
 	}
 
-	return fmt.Sprintf("%s", command)
+	return string(command)
 }
 
 // func extractCommand(request []byte) []byte {
@@ -262,7 +255,7 @@ func handleFeedback(request []byte) {
 	// proposalCheck = payload.Accept
 	// randomIdentity = payload.RandomIdentity
 	txid := hex.EncodeToString(payload.TxHash)
-	if proposalPool[txid] == false {
+	if !proposalPool[txid] {
 		log.Println("Not exist this proposal")
 		return
 	}
@@ -328,8 +321,8 @@ func handleBlock(request []byte, bc *blockchain.Blockchain) {
 	}
 	fmt.Println("Recevied a new block!")
 	bc.AddBlock(block)
-	UTXOSet := blockchain.UTXOSet{bc}
-	FTXSet := blockchain.FTXset{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
+	FTXSet := blockchain.FTXset{Blockchain: bc}
 	UTXOSet.Reindex()
 	FTXSet.ReindexFTX()
 	fmt.Printf("Added block %x\n", block.Hash)
@@ -520,8 +513,8 @@ func MiningBlock(bc *blockchain.Blockchain) {
 				if newBlock == nil {
 					break
 				}
-				UTXOSet := blockchain.UTXOSet{bc}
-				FTXSet := blockchain.FTXset{bc}
+				UTXOSet := blockchain.UTXOSet{Blockchain: bc}
+				FTXSet := blockchain.FTXset{Blockchain: bc}
 				UTXOSet.Reindex()
 				FTXSet.ReindexFTX()
 
@@ -647,10 +640,8 @@ func StartServer(minerAddress string) {
 
 	// for _, node := range bootsNodes {
 	SendVersion(bc)
-	fmt.Println("HELLO BLOCKCHAIN")
 	// }
 	if len(minerAddress) > 0 {
-		fmt.Println("I AM A MINER")
 		// timeStartnode <- time.Now().Unix()
 		go MiningBlock(bc)
 	}
@@ -674,14 +665,4 @@ func gobEncode(data interface{}) []byte {
 	}
 
 	return buff.Bytes()
-}
-
-func nodeIsKnown(addr string) bool {
-	for _, node := range bootsNodes {
-		if node == addr {
-			return true
-		}
-	}
-
-	return false
 }

@@ -35,7 +35,7 @@ func (r *RPC) FindIPFS(args *Args, res *Result) error {
 		return err
 	}
 	// bc := blockchain.NewBlockchainView()
-	FTXSet := blockchain.FTXset{bc}
+	FTXSet := blockchain.FTXset{Blockchain: bc}
 	listUser := FTXSet.FindIPFS(payload.IpfsHashENC)
 	data := Ipfs{listUser}
 	res.Res, err = GobEncode(data)
@@ -56,7 +56,7 @@ func (r *RPC) GetTxIns(args *Args, res *Result) error {
 	}
 
 	// bc := blockchain.NewBlockchainView()
-	UTXOSet := blockchain.UTXOSet{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
 
 	pubKeyHash := utils.Base58Decode([]byte(address))
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-wallet.AddressChecksumLen]
@@ -81,8 +81,8 @@ func (r *RPC) GetBlance(args *Args, res *Result) error {
 		return fmt.Errorf("ERROR: Recipient address is not valid")
 	}
 	// bc := blockchain.NewBlockchainView()
-	UTXOSet := blockchain.UTXOSet{bc}
-	FTXSet := blockchain.FTXset{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
+	FTXSet := blockchain.FTXset{Blockchain: bc}
 
 	balance := 0
 	pubKeyHash := utils.Base58Decode([]byte(address))
@@ -215,8 +215,6 @@ func commandToBytes(command string) []byte {
 
 	return bytes[:]
 }
-
-const protocol = "tcp"
 
 func SendData(data []byte) {
 	p2p.Send2Peers(data)
