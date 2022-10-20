@@ -6,17 +6,16 @@ import (
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
-	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/helper"
+	"github.com/thanhxeon2470/TSS_chain/p2p"
 	"github.com/thanhxeon2470/TSS_chain/rpc"
 )
 
@@ -27,21 +26,23 @@ const commandLength = 12
 var nodeAddress string
 var miningAddress string
 var StorageMiningAddress string
-var knownNodes = []string{}
+var bootsNodes = []string{}
 var blocksInTransit = [][]byte{}
 
 var mempool = make(map[string]blockchain.Transaction)
-var timeReceivedTx = make(chan int64)
-var timeMining int64 = 30 // 30s
+var proposalPool = make(map[string]bool)
+
+// var timeReceivedTx = make(chan int64)
+var timeMining int64 = 5 // 30s
 
 type block struct {
 	// AddrFrom string
 	Block []byte
 }
 
-// type getblocks struct {
-// 	AddrFrom string
-// }
+type getblocks struct {
+	// AddrFrom string
+}
 
 type getdata struct {
 	// AddrFrom string
@@ -60,18 +61,14 @@ type tx struct {
 	Transaction []byte
 }
 
-type txin struct {
-	// AddrFrom    string
-	Inputs []byte
-}
-
 type verzion struct {
+	// AddrFrom   string
 	Version    int
 	BestHeight int
-	// AddrFrom   string
 }
 
 type Proposal struct {
+	// AddrFrom             string
 	TxHash               []byte
 	StorageMiningAddress []byte
 	FileHash             []byte
@@ -80,6 +77,7 @@ type Proposal struct {
 
 // feedback proposal
 type Fbproposal struct {
+	// AddrFrom string
 	TxHash []byte
 	Accept bool
 }
@@ -103,7 +101,7 @@ func BytesToCommand(bytes []byte) string {
 		}
 	}
 
-	return fmt.Sprintf("%s", command)
+	return string(command)
 }
 
 // func extractCommand(request []byte) []byte {
@@ -125,96 +123,76 @@ func BytesToCommand(bytes []byte) string {
 // 	sendData(address, request)
 // }
 
-func SendBlock(addr string, b *blockchain.Block) {
+func SendBlock(b *blockchain.Block) {
 	data := block{b.Serialize()}
 	payload := gobEncode(data)
 	request := append(commandToBytes("block"), payload...)
-	SendData(addr, request)
+	SendData(request)
 }
 
-func SendData(addr string, data []byte) {
-	conn, err := net.Dial(protocol, addr)
-	if err != nil {
-		fmt.Printf("%s is not available\n", addr)
-		var updatedNodes []string
-
-		for _, node := range knownNodes[1:] {
-			if node != addr {
-				updatedNodes = append(updatedNodes, node)
-			}
-		}
-
-		knownNodes = updatedNodes
-
-		return
-	}
-	defer conn.Close()
-
-	_, err = io.Copy(conn, bytes.NewReader(data))
-	if err != nil {
-		log.Panic(err)
-	}
+func SendData(data []byte) {
+	p2p.Send2Peers(data)
 }
 
-func SendInv(address, kind string, items [][]byte) {
+func SendInv(kind string, items [][]byte) {
 	inventory := inv{kind, items}
 	payload := gobEncode(inventory)
 	request := append(commandToBytes("inv"), payload...)
 
-	SendData(address, request)
+	SendData(request)
 }
 
-func SendGetBlocks(address string) {
-	// payload := gobEncode(getblocks{nodeAddress})
-	request := commandToBytes("getblocks")
+func SendGetBlocks() {
+	payload := gobEncode(getblocks{})
+	request := append(commandToBytes("getblocks"), payload...)
 
-	SendData(address, request)
+	SendData(request)
 }
 
-func SendGetData(address, kind string, id []byte) {
+func SendGetData(kind string, id []byte) {
 	payload := gobEncode(getdata{kind, id})
 	request := append(commandToBytes("getdata"), payload...)
 
-	SendData(address, request)
+	SendData(request)
 }
 
-func SendTx(addr string, tnx *blockchain.Transaction) {
+func SendTx(tnx *blockchain.Transaction) {
 	data := tx{tnx.Serialize()}
 	payload := gobEncode(data)
 	request := append(commandToBytes("tx"), payload...)
 
-	SendData(addr, request)
+	SendData(request)
 }
 
-func SendTxIns(addr string, txins *blockchain.TXInputs) {
-	data := txin{txins.Serialize()}
-	payload := gobEncode(data)
-	request := append(commandToBytes("tx"), payload...)
+// func SendTxIns(addr string, txins *blockchain.TXInputs) {
+// 	data := txin{txins.Serialize()}
+// 	payload := gobEncode(data)
+// 	request := append(commandToBytes("tx"), payload...)
 
-	SendData(addr, request)
-}
+// 	SendData(addr, request)
+// }
 
-func SendVersion(addr string, bc *blockchain.Blockchain) {
+func SendVersion(bc *blockchain.Blockchain) {
 	bestHeight := bc.GetBestHeight()
 	payload := gobEncode(verzion{nodeVersion, bestHeight})
 	request := append(commandToBytes("version"), payload...)
 
-	SendData(addr, request)
+	SendData(request)
 }
 
-func SendProposal(addr string, pps Proposal) {
+func SendProposal(pps Proposal) {
 	payload := gobEncode(pps)
 	request := append(commandToBytes("proposal"), payload...)
-	SendData(addr, request)
+	SendData(request)
 }
 
-func SendFBProposal(addr string, txid []byte, feedback bool) {
+func SendFBProposal(txid []byte, feedback bool) {
 	payload := gobEncode(Fbproposal{txid, feedback})
 	request := append(commandToBytes("feedback"), payload...)
-	SendData(addr, request)
+	SendData(request)
 }
 
-func handleProposal(request []byte, addrFrom, addrLocal string) {
+func handleProposal(request []byte) {
 	var buff bytes.Buffer
 	var payload Proposal
 	buff.Write(request[commandLength:])
@@ -223,10 +201,14 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 	if err != nil {
 		log.Panic(err)
 	}
-
+	txid := hex.EncodeToString(payload.TxHash)
+	if proposalPool[txid] {
+		fmt.Println("This proposal is existed!")
+		return
+	}
 	// add file to ipfs when receive tx
 	if len(StorageMiningAddress) > 0 {
-		if bytes.Compare(payload.StorageMiningAddress, []byte(StorageMiningAddress)) == 0 {
+		if bytes.Equal(payload.StorageMiningAddress, []byte(StorageMiningAddress)) {
 			// Get file on ipfs
 			fh := string(payload.FileHash)
 			isSuccess, err := helper.IpfsGet(fh)
@@ -247,20 +229,25 @@ func handleProposal(request []byte, addrFrom, addrLocal string) {
 				fmt.Print("Cant get file from ipfs")
 			}
 
-			SendFBProposal(addrFrom, payload.TxHash, true)
+			SendFBProposal(payload.TxHash, true)
 			return
 		}
 	}
-	if addrLocal == knownNodes[0] {
-		for _, node := range knownNodes {
-			if node != addrLocal && node != addrFrom {
-				SendProposal(node, payload)
-			}
-		}
-	}
+	// proposalPool[txid] = true
+	// // if addrLocal == knownNodes[0] {
+	// if !nodeIsKnown(payload.AddrFrom) {
+	// 	bootsNodes = append(bootsNodes, payload.AddrFrom)
+	// 	fmt.Printf("There are %d known nodes now!\n", len(bootsNodes))
+	// }
+	// for _, node := range bootsNodes {
+	// 	if node != nodeIP && node != payload.AddrFrom {
+	// 		SendProposal(node, payload)
+	// 	}
+	// }
+	// }
 }
 
-func handleFeedback(request []byte, addrFrom, addrLocal string) {
+func handleFeedback(request []byte) {
 	var buff bytes.Buffer
 	var payload Fbproposal
 	buff.Write(request[commandLength:])
@@ -271,24 +258,36 @@ func handleFeedback(request []byte, addrFrom, addrLocal string) {
 	}
 	// proposalCheck = payload.Accept
 	// randomIdentity = payload.RandomIdentity
-	if addrLocal == knownNodes[0] {
-		for _, node := range knownNodes {
-			if node != addrLocal && node != addrFrom {
-				SendFBProposal(node, payload.TxHash, payload.Accept)
-			}
-		}
+	txid := hex.EncodeToString(payload.TxHash)
+	if !proposalPool[txid] {
+		log.Println("Not exist this proposal")
+		return
 	}
-	if len(mempool) > 0 {
-		// When received feedback proposal =>>> check this and send transaction
-		for id := range mempool {
-			if id == hex.EncodeToString(payload.TxHash) {
-				tx := mempool[id]
-				SendTx(knownNodes[0], &tx)
-				delete(mempool, id)
 
-			}
-		}
-	}
+	delete(proposalPool, txid)
+
+	// // if addrLocal == knownNodes[0] {
+	// for _, node := range bootsNodes {
+	// 	if node != nodeIP && node != payload.AddrFrom {
+	// 		SendFBProposal(node, payload.TxHash, payload.Accept)
+	// 	}
+	// }
+	// // }
+	// if len(mempool) > 0 {
+	// 	// When received feedback proposal =>>> check this and send transaction
+	// 	for id := range mempool {
+	// 		if id == hex.EncodeToString(payload.TxHash) {
+	// 			tx := mempool[id]
+	// 			SendTx(bootsNodes[0], &tx)
+	// 			delete(mempool, id)
+
+	// 		}
+	// 	}
+	// }
+	// if !nodeIsKnown(payload.AddrFrom) {
+	// 	bootsNodes = append(bootsNodes, payload.AddrFrom)
+	// 	fmt.Printf("There are %d known nodes now!\n", len(bootsNodes))
+	// }
 }
 
 // func handleAddr(request []byte, bc *blockchain.Blockchain) {
@@ -306,7 +305,7 @@ func handleFeedback(request []byte, addrFrom, addrLocal string) {
 // 	fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
 // }
 
-func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom, localAddr string) {
+func handleBlock(request []byte, bc *blockchain.Blockchain) {
 	var buff bytes.Buffer
 	var payload block
 
@@ -319,36 +318,43 @@ func handleBlock(request []byte, bc *blockchain.Blockchain, addrFrom, localAddr 
 
 	blockData := payload.Block
 	block := blockchain.DeserializeBlock(blockData)
+	if bc.IsBlockExist(block.Hash) {
+		fmt.Println("Recevied a block! But it's existed")
 
+		return
+	}
 	fmt.Println("Recevied a new block!")
 	bc.AddBlock(block)
-
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
+	FTXSet := blockchain.FTXset{Blockchain: bc}
+	UTXOSet.Reindex()
+	FTXSet.ReindexFTX()
 	fmt.Printf("Added block %x\n", block.Hash)
 
-	if localAddr == knownNodes[0] {
-		for _, node := range knownNodes {
-			if node != localAddr && node != addrFrom {
-				SendBlock(node, block)
-				fmt.Printf("This block is broadcasted to %s\n", node)
-			}
-		}
-	}
+	first := len(blocksInTransit)
+	if first > 0 {
+		blockHash := blocksInTransit[first-1]
+		SendGetData("block", blockHash)
 
-	if len(blocksInTransit) > 0 {
-		blockHash := blocksInTransit[0]
-		SendGetData(addrFrom, "block", blockHash)
-
-		blocksInTransit = blocksInTransit[1:]
-	} else {
-		UTXOSet := blockchain.UTXOSet{bc}
-		FTXSet := blockchain.FTXset{bc}
-		UTXOSet.Reindex()
-		FTXSet.ReindexFTX()
+		blocksInTransit = blocksInTransit[:first-1]
 
 	}
+
+	// // if localAddr == knownNodes[0] {
+	// for _, node := range bootsNodes {
+	// 	if node != nodeIP && node != payload.AddrFrom {
+	// SendBlock("node", block)
+	// 		fmt.Printf("This block is broadcasted to %s\n", node)
+	// 	}
+	// }
+	// // }
+	// if !nodeIsKnown(payload.AddrFrom) {
+	// 	bootsNodes = append(bootsNodes, payload.AddrFrom)
+	// 	fmt.Printf("There are %d known nodes now!\n", len(bootsNodes))
+	// }
 }
 
-func handleInv(request []byte, bc *blockchain.Blockchain, addrFrom string) {
+func handleInv(request []byte, bc *blockchain.Blockchain) {
 	var buff bytes.Buffer
 	var payload inv
 
@@ -362,36 +368,54 @@ func handleInv(request []byte, bc *blockchain.Blockchain, addrFrom string) {
 	fmt.Printf("Recevied inventory with %d %s\n", len(payload.Items), payload.Type)
 
 	if payload.Type == "block" {
-		blocksInTransit = payload.Items
-
-		blockHash := payload.Items[0]
-		SendGetData(addrFrom, "block", blockHash)
-
-		//doan nay vo dung
-		newInTransit := [][]byte{}
-		for _, b := range blocksInTransit {
-			if bytes.Compare(b, blockHash) != 0 {
-				newInTransit = append(newInTransit, b)
+		blocksInTransit = [][]byte{}
+		for _, hash := range payload.Items {
+			if !bc.IsBlockExist(hash) {
+				blocksInTransit = append(blocksInTransit, hash)
 			}
 		}
-		blocksInTransit = newInTransit
+
+		if len(blocksInTransit) > 0 {
+			first := len(blocksInTransit) - 1
+			blockHash := blocksInTransit[first]
+			SendGetData("block", blockHash)
+
+			blocksInTransit = blocksInTransit[:first]
+		}
 	}
 
 	if payload.Type == "tx" {
 		txID := payload.Items[0]
 
 		if mempool[hex.EncodeToString(txID)].ID == nil {
-			SendGetData(addrFrom, "tx", txID)
+			SendGetData("tx", txID)
 		}
 	}
+	// if !nodeIsKnown(payload.AddrFrom) {
+	// 	bootsNodes = append(bootsNodes, payload.AddrFrom)
+	// 	fmt.Printf("There are %d known nodes now!\n", len(bootsNodes))
+	// }
 }
 
-func handleGetBlocks(request []byte, bc *blockchain.Blockchain, addrFrom string) {
+func handleGetBlocks(request []byte, bc *blockchain.Blockchain) {
+	var buff bytes.Buffer
+	var payload getblocks
+
+	buff.Write(request[commandLength:])
+	dec := gob.NewDecoder(&buff)
+	err := dec.Decode(&payload)
+	if err != nil {
+		log.Panic(err)
+	}
 	blocks := bc.GetBlockHashes()
-	SendInv(addrFrom, "block", blocks)
+	SendInv("block", blocks)
+	// if !nodeIsKnown(payload.AddrFrom) {
+	// 	bootsNodes = append(bootsNodes, payload.AddrFrom)
+	// 	fmt.Printf("There are %d known nodes now!\n", len(bootsNodes))
+	// }
 }
 
-func handleGetData(request []byte, bc *blockchain.Blockchain, addrFrom string) {
+func handleGetData(request []byte, bc *blockchain.Blockchain) {
 	var buff bytes.Buffer
 	var payload getdata
 
@@ -408,19 +432,23 @@ func handleGetData(request []byte, bc *blockchain.Blockchain, addrFrom string) {
 			return
 		}
 
-		SendBlock(addrFrom, &block)
+		SendBlock(&block)
 	}
 
 	if payload.Type == "tx" {
 		txID := hex.EncodeToString(payload.ID)
 		tx := mempool[txID]
 
-		SendTx(addrFrom, &tx)
+		SendTx(&tx)
 		// delete(mempool, txID)
 	}
+	// if !nodeIsKnown(payload.AddrFrom) {
+	// 	bootsNodes = append(bootsNodes, payload.AddrFrom)
+	// 	fmt.Printf("There are %d known nodes now!\n", len(bootsNodes))
+	// }
 }
 
-func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLocal string) {
+func handleTx(request []byte, bc *blockchain.Blockchain) {
 	var buff bytes.Buffer
 	var payload tx
 
@@ -435,80 +463,87 @@ func handleTx(request []byte, bc *blockchain.Blockchain, addrFrom string, addrLo
 	tx := blockchain.DeserializeTransaction(txData)
 	mempool[hex.EncodeToString(tx.ID)] = tx
 
-	if addrLocal == knownNodes[0] {
-		for _, node := range knownNodes {
-			if node != addrLocal && node != addrFrom {
-				SendInv(node, "tx", [][]byte{tx.ID})
-			}
-		}
-	}
+	// if addrLocal == knownNodes[0] {
+	// for _, node := range bootsNodes {
+	// 	if node != nodeIP && node != payload.AddrFrom {
+	// 		fmt.Printf("This transaction will be broadcasted to %s\n", node)
+	// 		SendInv(node, "tx", [][]byte{tx.ID})
+	// 	}
+	// }
+	// }
 	// root lamf wallet app chua chuyen file di duocj
 	fmt.Println("Time receive tx...", time.Now().Unix())
 
-	timeReceivedTx <- time.Now().Unix()
-
+	// timeReceivedTx <- time.Now().Unix()
+	// if !nodeIsKnown(payload.AddrFrom) {
+	// 	bootsNodes = append(bootsNodes, payload.AddrFrom)
+	// 	fmt.Printf("There are %d known nodes now!\n", len(bootsNodes))
+	// }
 }
 
 // After 30s, if less than 3 txs block will be mined
-func MiningBlock(bc *blockchain.Blockchain, timeStart chan int64) {
-	t := <-timeStart
-	fmt.Println("Wait for mine...", t)
+func MiningBlock(bc *blockchain.Blockchain) {
+	t := time.NewTicker(time.Duration(timeMining) * time.Second)
 	for {
-		timeNow := time.Now().Unix()
-		if len(miningAddress) > 0 && len(mempool) >= 1 && (len(mempool) >= 3 || timeNow-t > timeMining) {
-			fmt.Println("Mined...", timeNow)
-		MineTransactions:
-			var txs []*blockchain.Transaction
+		// t := <-timeStart
+		fmt.Println("Wait for mine...")
+		<-t.C
+		for {
 
-			for id := range mempool {
-				tx := mempool[id]
-				if bc.VerifyTransaction(&tx) {
-					UTXO := blockchain.UTXOSet{bc}
-					if UTXO.UpdateFromTX(&tx) {
+			timeNow := time.Now().Unix()
+			// if len(miningAddress) > 0 && len(mempool) >= 1 && (len(mempool) >= 3 || timeNow-t > timeMining) {
+			if len(miningAddress) > 0 {
+				fmt.Println("Mined...", timeNow)
+			MineTransactions:
+				var txs []*blockchain.Transaction
+
+				for _, tx := range mempool {
+					if bc.VerifyTransaction(&tx) {
 						txs = append(txs, &tx)
-
-					} else {
-						txID := hex.EncodeToString(tx.ID)
-						delete(mempool, txID)
 					}
+					txID := hex.EncodeToString(tx.ID)
+					delete(mempool, txID)
 				}
+
+				if len(txs) == 0 {
+					fmt.Println("All transactions are invalid! Waiting for new ones...")
+					break
+				}
+
+				cbTx := blockchain.NewCoinbaseTX(miningAddress, "")
+				txs = append(txs, cbTx)
+
+				newBlock := bc.MineBlock(txs)
+				if newBlock == nil {
+					break
+				}
+				UTXOSet := blockchain.UTXOSet{Blockchain: bc}
+				FTXSet := blockchain.FTXset{Blockchain: bc}
+				UTXOSet.Reindex()
+				FTXSet.ReindexFTX()
+
+				fmt.Println("New block is mined!")
+
+				for _, tx := range txs {
+					txID := hex.EncodeToString(tx.ID)
+					delete(mempool, txID)
+				}
+
+				// for _, node := range bootsNodes {
+				SendInv("block", [][]byte{newBlock.Hash})
+				// }
+
+				if len(mempool) > 0 {
+					goto MineTransactions
+				}
+				break
 			}
-
-			if len(txs) == 0 {
-				fmt.Println("All transactions are invalid! Waiting for new ones...")
-				return
-			}
-
-			cbTx := blockchain.NewCoinbaseTX(miningAddress, "")
-			txs = append(txs, cbTx)
-
-			newBlock := bc.MineBlock(txs)
-			UTXOSet := blockchain.UTXOSet{bc}
-			FTXSet := blockchain.FTXset{bc}
-			UTXOSet.Reindex()
-			FTXSet.ReindexFTX()
-
-			fmt.Println("New block is mined!")
-
-			for _, tx := range txs {
-				txID := hex.EncodeToString(tx.ID)
-				delete(mempool, txID)
-			}
-
-			for _, node := range knownNodes {
-				SendInv(node, "block", [][]byte{newBlock.Hash})
-			}
-
-			if len(mempool) > 0 {
-				goto MineTransactions
-			}
-			break
 		}
 	}
 
 }
 
-func handleVersion(request []byte, bc *blockchain.Blockchain, addrFrom string) {
+func handleVersion(request []byte, bc *blockchain.Blockchain) {
 	var buff bytes.Buffer
 	var payload verzion
 
@@ -523,50 +558,44 @@ func handleVersion(request []byte, bc *blockchain.Blockchain, addrFrom string) {
 
 	fmt.Println("myBestHeight ", myBestHeight)
 	if myBestHeight < foreignerBestHeight {
-		SendGetBlocks(addrFrom)
+		SendGetBlocks()
 	} else if myBestHeight > foreignerBestHeight {
-		SendVersion(addrFrom, bc)
+		SendVersion(bc)
 	}
 	// sendAddr(addrFrom)
-	if !nodeIsKnown(addrFrom) {
-		knownNodes = append(knownNodes, addrFrom)
-		fmt.Printf("There are %d known nodes now!\n", len(knownNodes))
-	}
+	// if !nodeIsKnown(payload.AddrFrom) {
+	// 	bootsNodes = append(bootsNodes, payload.AddrFrom)
+	// 	fmt.Printf("There are %d known nodes now!\n", len(bootsNodes))
+	// }
 }
 
-func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
-	request, err := ioutil.ReadAll(conn)
-	if err != nil {
-		log.Panic(err)
-	}
+func handleConnection(request []byte, bc *blockchain.Blockchain) {
 	command := BytesToCommand(request[:commandLength])
 	fmt.Printf("Received %s command\n", command)
-	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("PORT"))
-	addrLocal := fmt.Sprintf("%s:%s", strings.Split(conn.LocalAddr().String(), ":")[0], os.Getenv("PORT"))
+
 	switch command {
 	// case "addr":
 	// 	handleAddr(request, bc)
 	case "block":
-		handleBlock(request, bc, addrFrom, addrLocal)
+		handleBlock(request, bc)
 	case "inv":
-		handleInv(request, bc, addrFrom)
+		handleInv(request, bc)
 	case "getblocks":
-		handleGetBlocks(request, bc, addrFrom)
+		handleGetBlocks(request, bc)
 	case "getdata":
-		handleGetData(request, bc, addrFrom)
+		handleGetData(request, bc)
 	case "tx":
-		handleTx(request, bc, addrFrom, addrLocal)
+		handleTx(request, bc)
 	case "version":
-		handleVersion(request, bc, addrFrom)
+		handleVersion(request, bc)
 	case "proposal":
-		handleProposal(request, addrFrom, addrLocal)
+		handleProposal(request)
 	case "feedback":
-		handleFeedback(request, addrFrom, addrLocal)
+		handleFeedback(request)
 	default:
 		fmt.Println("Unknown command!")
 	}
 
-	conn.Close()
 	rm := helper.RemoveExpireIPFS(bc)
 	if len(rm) > 0 {
 		fmt.Println("Remove flie(s)!")
@@ -580,30 +609,38 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 
 // StartServer starts a node
 func StartServer(minerAddress string) {
-	knownNodes = strings.Split(os.Getenv("KNOWNNODE"), "_")
-	miningAddress = minerAddress
-	port := fmt.Sprintf(":%s", os.Getenv("PORT"))
-	ln, err := net.Listen(protocol, port)
-	if err != nil {
-		log.Panic(err)
-	}
-	defer ln.Close()
-	fmt.Println("Blockchain is listening at port ", port)
-
-	portRPC := fmt.Sprintf(":%s", os.Getenv("PORT_RPC"))
-	lnRpc, err := net.Listen(protocol, portRPC)
-	if err != nil {
-		log.Panic(err)
-	}
-	defer lnRpc.Close()
-	fmt.Println("Blockchain RPC is listening at port ", portRPC)
-
-	bc := blockchain.NewBlockchain()
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
+	nodes := os.Getenv("BOOTSNODES")
+	if nodes == "" {
+		fmt.Printf("BOOTSNODES env. var is not set!")
 		os.Exit(1)
 	}
+	bootsNodes = strings.Split(nodes, "_")
+
+	portStr := os.Getenv("P2P_PORT")
+	port := 0
+	if portStr == "" {
+		fmt.Printf("P2P_PORT env. var is not set! (default random)")
+		os.Exit(1)
+	} else {
+		p, err := strconv.Atoi(portStr)
+		if err != nil {
+			panic(err)
+		}
+		port = p
+	}
+
+	// nodeIP = thisNode
+	miningAddress = minerAddress
+	// port := strings.Split(thisNode, ":")[1]
+	// port = fmt.Sprintf(":%s", port)
+	// ln, err := net.Listen(protocol, port)
+	// if err != nil {
+	// 	log.Panic(err)
+	// }
+	// defer ln.Close()
+	// fmt.Println("Blockchain is listening at port ", port)
+	p2p.InitP2P(port, bootsNodes, true)
+	bc := blockchain.NewBlockchain()
 
 	s := rpc.InitJSONRPCServer(":8332")
 	// bcv:= blockchain.NewBlockchainView()
@@ -616,51 +653,22 @@ func StartServer(minerAddress string) {
 	if err := s.Run(ctx); err != nil {
 		log.Fatal(err)
 	}
-
-	dif := 0
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				nodeAddress = fmt.Sprintf("%s:%s", ipnet.IP.String(), os.Getenv("PORT"))
-				dif += 1
-
-				if nodeAddress == knownNodes[0] {
-					break
-				}
-				dif -= 1
-			}
-		}
-	}
-
-	if dif == 0 {
-		SendVersion(knownNodes[0], bc)
-	}
+	// for _, node := range bootsNodes {
+	SendVersion(bc)
+	// }
 	if len(minerAddress) > 0 {
 		// timeStartnode <- time.Now().Unix()
-		go MiningBlock(bc, timeReceivedTx)
+		go MiningBlock(bc)
 	}
 
-	// go handleRPC(lnRpc)
+	go rpc.HandleRPC(bc)
 
 	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			log.Panic(err)
-		}
-		go handleConnection(conn, bc)
+		data2handle := <-p2p.Data2Handle
+		go handleConnection(data2handle, bc)
 
 	}
 }
-
-// func handleRPC(ln net.Listener) {
-// 	for {
-// 		conn, err := ln.Accept()
-// 		if err != nil {
-// 			log.Panic(err)
-// 		}
-// 		go rpc.HandleRPC(conn)
-// 	}
-// }
 
 func gobEncode(data interface{}) []byte {
 	var buff bytes.Buffer
@@ -672,14 +680,4 @@ func gobEncode(data interface{}) []byte {
 	}
 
 	return buff.Bytes()
-}
-
-func nodeIsKnown(addr string) bool {
-	for _, node := range knownNodes {
-		if node == addr {
-			return true
-		}
-	}
-
-	return false
 }
