@@ -93,7 +93,6 @@ func (t *TXIpfs) verifyIPFS() bool {
 	sigLen := len(t.SignatureFile)
 	r.SetBytes(t.SignatureFile[:(sigLen / 2)])
 	s.SetBytes(t.SignatureFile[(sigLen / 2):])
-
 	x := big.Int{}
 	y := big.Int{}
 	keyLen := len(t.PubKeyOwner)

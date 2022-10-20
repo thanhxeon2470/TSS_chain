@@ -5,12 +5,14 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
+	"github.com/thanhxeon2470/TSS_chain/p2p"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 )
 
-func (cli *CLI) Send(prkFrom, to string, amount int, mineNow bool) bool {
+func (cli *CLI) Send(prkFrom, to string, amount int) bool {
 	// if !wallet.ValidateAddress(prkFrom) {
 	// 	log.Panic("ERROR: Sender address is not valid")
 	// }
@@ -24,35 +26,25 @@ func (cli *CLI) Send(prkFrom, to string, amount int, mineNow bool) bool {
 	// }
 	w := wallet.DecodePrivKey([]byte(prkFrom))
 
-	if mineNow {
-		bc := blockchain.NewBlockchain()
-		UTXOSet := blockchain.UTXOSet{bc}
-		defer bc.DB.Close()
+	bc := blockchain.NewBlockchainView()
+	defer bc.DB.Close()
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
+	tx := blockchain.NewUTXOTransaction(w, to, amount, nil, nil, &UTXOSet)
+	if tx == nil {
+		fmt.Println("Fail to create transaction!")
 
-		tx := blockchain.NewUTXOTransaction(w, to, amount, nil, nil, &UTXOSet)
-		if tx == nil {
-			fmt.Println("Fail to create transaction!")
-
-			return false
-		}
-		cbTx := blockchain.NewCoinbaseTX(string(w.GetAddress()), "")
-		txs := []*blockchain.Transaction{cbTx, tx}
-
-		newBlock := bc.MineBlock(txs)
-		UTXOSet.Update(newBlock)
-	} else {
-		bc := blockchain.NewBlockchainView()
-		defer bc.DB.Close()
-		UTXOSet := blockchain.UTXOSet{bc}
-		tx := blockchain.NewUTXOTransaction(w, to, amount, nil, nil, &UTXOSet)
-		if tx == nil {
-			fmt.Println("Fail to create transaction!")
-
-			return false
-		}
-		SendTx(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], tx)
+		return false
 	}
-
+	nodes := os.Getenv("BOOTSNODES")
+	if nodes == "" {
+		fmt.Printf("BOOTSNODES env. var is not set!")
+		os.Exit(1)
+	}
+	bootsNodestmp := strings.Split(nodes, "_")
+	p2p.InitP2P(0, bootsNodestmp, false)
+	time.Sleep(2 * time.Second)
+	SendTx(tx)
+	time.Sleep(time.Second)
 	fmt.Println("Success!")
 	return true
 }

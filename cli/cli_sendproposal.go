@@ -7,8 +7,10 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
+	"github.com/thanhxeon2470/TSS_chain/p2p"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 
 	"github.com/ethereum/go-ethereum/crypto/ecies"
@@ -31,7 +33,7 @@ func (cli *CLI) SendProposal(prkFrom, to string, amount int, iHash string) strin
 
 	bc := blockchain.NewBlockchainView()
 	defer bc.DB.Close()
-	UTXOSet := blockchain.UTXOSet{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
 
 	prkECIES := ecies.ImportECDSA(&w.PrivateKey)
 	ct, err := ecies.Encrypt(rand.Reader, &prkECIES.PublicKey, []byte(iHash), nil, nil)
@@ -46,9 +48,18 @@ func (cli *CLI) SendProposal(prkFrom, to string, amount int, iHash string) strin
 		return ""
 	}
 	proposal := Proposal{tx.ID, []byte(to), []byte(iHash), amount}
-	SendProposal(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], proposal)
-	sendto := fmt.Sprint("127.0.0.1:", os.Getenv("PORT"))
-	SendTx(sendto, tx)
 
+	nodes := os.Getenv("BOOTSNODES")
+	if nodes == "" {
+		fmt.Printf("BOOTSNODES env. var is not set!")
+		os.Exit(1)
+	}
+	bootsNodestmp := strings.Split(nodes, "_")
+	p2p.InitP2P(0, bootsNodestmp, false)
+	time.Sleep(2 * time.Second)
+
+	SendProposal(proposal)
+	SendTx(tx)
+	time.Sleep(time.Second)
 	return hex.EncodeToString(ct)
 }

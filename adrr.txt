@@ -8,20 +8,36 @@ wallet chưa có xiền
  Your private key: 2brnL7iBJjQ8S1rZiNPrgz18J3dR9aZDssi7NkDGQfXg
 
 
-./TSS_chain createblockchain -address 1Jg2aTGmJQpPMTNyKr7CMRspxV1pUAe5x4
+wallet for test:
+"address": "1AFfbicXJ49SUddh4CGPVbiFFN18GhkYxZ",
+"priv_key": "ALMEvFzwz7EWVt3FvCHkzwRhhsrgoyZ685Lk7VrdXqAV",
+"pub_key": "4LUX7zeyQbkfmyY8sk7C1ojJbGTzmHWbhwAK1VTcAoDhBeUuM6qsS4mcPiJhrFqLPAQo2XMQ8AhotbdQ6vRjNrkr"
+
+
+./testchain createblockchain -address 1Jg2aTGmJQpPMTNyKr7CMRspxV1pUAe5x4
 
 Send from privatekey to address amount and allowuser
-./TSS_chain send -from  7jczDSiSxs6ZNzQdTT6TydNHgNLKBNLjPWzJ2JHkiX -to 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7 -amount 5 -allowuser 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7 -ipfshash 1231233 -mine
+./testchain send -from  7jczDSiSxs6ZNzQdTT6TydNHgNLKBNLjPWzJ2JHkiX -to 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7\
+ -amount 5 -allowuser 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7 -ipfshash abacn1sad23ab -mine
 
 
-./TSS_chain createwallet
+./testchain createwallet
 
 ./TSS_chain getbalance -address 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7
 
 ./TSS_chain getbalance -address 1Jg2aTGmJQpPMTNyKr7CMRspxV1pUAe5x4
 
-./TSS_chain printchain
+
+./TSS_chain getbalance -address 1AFfbicXJ49SUddh4CGPVbiFFN18GhkYxZ
+
+
+
+./testchain printchain
 
 ./TSS_chain reindexutxo
 
-./TSS_chain startnode (-miner 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7) 
+./TSS_chain startnode -storageminer 1Jg2aTGmJQpPMTNyKr7CMRspxV1pUAe5x4 
+./TSS_chain startnode -miner 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7 -storageminer 16Jcx92y5gv1vfVfzqFkghqXYSCdTkmgV7 
+
+./TSS_chain send -from 7jczDSiSxs6ZNzQdTT6TydNHgNLKBNLjPWzJ2JHkiX -to 1AFfbicXJ49SUddh4CGPVbiFFN18GhkYxZ -amount 20
+./TSS_chain sendcontent -from 2brnL7iBJjQ8S1rZiNPrgz18J3dR9aZDssi7NkDGQfXg -to 1Jg2aTGmJQpPMTNyKr7CMRspxV1pUAe5x4 -amount 15 -ipfshash Qm...

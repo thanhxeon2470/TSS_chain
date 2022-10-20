@@ -11,9 +11,11 @@ import (
 	"math/big"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/thanhxeon2470/TSS_chain/blockchain"
 	"github.com/thanhxeon2470/TSS_chain/helper"
+	"github.com/thanhxeon2470/TSS_chain/p2p"
 	"github.com/thanhxeon2470/TSS_chain/utils"
 	"github.com/thanhxeon2470/TSS_chain/wallet"
 
@@ -37,7 +39,7 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 	bc := blockchain.NewBlockchainView()
 	defer bc.DB.Close()
 
-	UTXOSet := blockchain.UTXOSet{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
 
 	curve := elliptic.P256()
 	pubKey := utils.Base58Decode([]byte(pubkeyallowuser))
@@ -128,9 +130,19 @@ func (cli *CLI) Share(prkFrom, to string, amount int, pubkeyallowuser string, iH
 			return ""
 		}
 		proposal := Proposal{tx.ID, []byte(to), []byte(newIHash), amount}
-		SendProposal(strings.Split(os.Getenv("KNOWNNODE"), "_")[0], proposal)
-		sendto := fmt.Sprint("127.0.0.1:", os.Getenv("PORT"))
-		SendTx(sendto, tx)
+
+		nodes := os.Getenv("BOOTSNODES")
+		if nodes == "" {
+			fmt.Printf("BOOTSNODES env. var is not set!")
+			os.Exit(1)
+		}
+		bootsNodestmp := strings.Split(nodes, "_")
+		p2p.InitP2P(0, bootsNodestmp, false)
+		time.Sleep(2 * time.Second)
+
+		SendProposal(proposal)
+		SendTx(tx)
+		time.Sleep(time.Second)
 
 		return hex.EncodeToString(ct)
 	}

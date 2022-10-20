@@ -115,8 +115,11 @@ func (u UTXOSet) IsTransactionExistInUTXO(ID, pubKeyHash []byte, idx int) int {
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			outs := DeserializeOutputs(v)
 
-			if outs.Outputs[idx].IsLockedWithKey(pubKeyHash) {
-				if bytes.Compare(k, ID) == 0 {
+			if bytes.Equal(k, ID) {
+				if len(outs.Outputs) <= idx {
+					return nil
+				}
+				if outs.Outputs[idx].IsLockedWithKey(pubKeyHash) {
 					result = outs.Outputs[idx].Value
 					return nil
 				}

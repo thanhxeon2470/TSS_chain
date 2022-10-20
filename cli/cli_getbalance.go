@@ -15,8 +15,8 @@ func (cli *CLI) GetBalance(address string) (int, map[string]blockchain.InfoIPFS)
 		log.Panic("ERROR: Address is not valid")
 	}
 	bc := blockchain.NewBlockchainView()
-	UTXOSet := blockchain.UTXOSet{bc}
-	FTXSet := blockchain.FTXset{bc}
+	UTXOSet := blockchain.UTXOSet{Blockchain: bc}
+	FTXSet := blockchain.FTXset{Blockchain: bc}
 	defer bc.DB.Close()
 
 	balance := 0

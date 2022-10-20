@@ -15,7 +15,7 @@ func (cli *CLI) IPFSget(prk, ipfsHashENC string) string {
 
 	bc := blockchain.NewBlockchainView()
 	defer bc.DB.Close()
-	FTXSet := blockchain.FTXset{bc}
+	FTXSet := blockchain.FTXset{Blockchain: bc}
 	ipfsHashBytes, err := hex.DecodeString(ipfsHashENC)
 	if err != nil {
 		return ""
@@ -23,8 +23,8 @@ func (cli *CLI) IPFSget(prk, ipfsHashENC string) string {
 	listUser := FTXSet.FindIPFS(ipfsHashBytes)
 	addr := w.GetAddress()
 	if len(listUser) > 0 {
-		for user, _ := range listUser {
-			if bytes.Compare(addr, []byte(user)) == 0 {
+		for user := range listUser {
+			if bytes.Equal(addr, []byte(user)) {
 				priKey := ecies.ImportECDSA(&w.PrivateKey)
 				ifh, err := hex.DecodeString(ipfsHashENC)
 				if err != nil {

@@ -13,7 +13,7 @@ func (cli *CLI) FindIPFS(ipfsHash string) map[string]bool {
 	// 	log.Panic("ERROR: Address is not valid")
 	// }
 	bc := blockchain.NewBlockchainView()
-	FTXSet := blockchain.FTXset{bc}
+	FTXSet := blockchain.FTXset{Blockchain: bc}
 	defer bc.DB.Close()
 
 	// balance := 0
