@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/signal"
 	"strings"
 	"time"
 
@@ -92,7 +94,7 @@ func commandToBytes(command string) []byte {
 	return bytes[:]
 }
 
-func bytesToCommand(bytes []byte) string {
+func BytesToCommand(bytes []byte) string {
 	var command []byte
 
 	for _, b := range bytes {
@@ -537,7 +539,7 @@ func handleConnection(conn net.Conn, bc *blockchain.Blockchain) {
 	if err != nil {
 		log.Panic(err)
 	}
-	command := bytesToCommand(request[:commandLength])
+	command := BytesToCommand(request[:commandLength])
 	fmt.Printf("Received %s command\n", command)
 	addrFrom := fmt.Sprintf("%s:%s", strings.Split(conn.RemoteAddr().String(), ":")[0], os.Getenv("PORT"))
 	addrLocal := fmt.Sprintf("%s:%s", strings.Split(conn.LocalAddr().String(), ":")[0], os.Getenv("PORT"))
@@ -603,6 +605,18 @@ func StartServer(minerAddress string) {
 		os.Exit(1)
 	}
 
+	s := rpc.InitJSONRPCServer(":8332")
+	// bcv:= blockchain.NewBlockchainView()
+
+	ctxbc := context.WithValue(context.Background(), rpc.Bckey, bc)
+	ctx, cancel := signal.NotifyContext(ctxbc, os.Interrupt, os.Kill)
+	// ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+	fmt.Println("RPC server(standard) running on Port: 8332")
+	if err := s.Run(ctx); err != nil {
+		log.Fatal(err)
+	}
+
 	dif := 0
 	for _, a := range addrs {
 		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
@@ -626,7 +640,7 @@ func StartServer(minerAddress string) {
 		go MiningBlock(bc, timeReceivedTx)
 	}
 
-	go handleRPC(lnRpc)
+	// go handleRPC(lnRpc)
 
 	for {
 		conn, err := ln.Accept()
@@ -638,15 +652,15 @@ func StartServer(minerAddress string) {
 	}
 }
 
-func handleRPC(ln net.Listener) {
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			log.Panic(err)
-		}
-		go rpc.HandleRPC(conn)
-	}
-}
+// func handleRPC(ln net.Listener) {
+// 	for {
+// 		conn, err := ln.Accept()
+// 		if err != nil {
+// 			log.Panic(err)
+// 		}
+// 		go rpc.HandleRPC(conn)
+// 	}
+// }
 
 func gobEncode(data interface{}) []byte {
 	var buff bytes.Buffer
