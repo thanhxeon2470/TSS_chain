@@ -44,6 +44,16 @@ func (w Wallet) GetAddress() []byte {
 	return address
 }
 
+func DecodeAddress(addr string) []byte {
+	rawAddr := utils.Base58Decode([]byte(addr))
+	if len(rawAddr) <= 4 {
+		rawAddr = []byte{0x00, 0x00, 0x00, 0x00}
+	}
+	pubkeyHash := rawAddr[1 : len(rawAddr)-AddressChecksumLen]
+
+	return pubkeyHash
+}
+
 // HashPubKey hashes public key
 func HashPubKey(pubKey []byte) []byte {
 	publicSHA256 := sha256.Sum256(pubKey)
