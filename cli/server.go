@@ -22,15 +22,11 @@ import (
 	"github.com/thanhxeon2470/TSS_chain/rpc"
 )
 
-
 const protocol = "tcp"
 const nodeVersion = 1
 const commandLength = 12
 
 var nodeAddress string
-
-const nodeVersion = 1
-const commandLength = 12
 
 var miningAddress string
 var StorageMiningAddress string
@@ -649,7 +645,6 @@ func StartServer(minerAddress string) {
 	// fmt.Println("Blockchain is listening at port ", port)
 	p2p.InitP2P(port, bootsNodes, true)
 	bc := blockchain.NewBlockchain()
-
 
 	s := rpc.InitJSONRPCServer(":8332")
 	// bcv:= blockchain.NewBlockchainView()
