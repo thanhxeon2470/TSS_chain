@@ -331,44 +331,6 @@ func (bc *Blockchain) GetBestHeight() int {
 	return lastBlock.Height
 }
 
-//GetLastBlock
-func (bc *Blockchain) GetLastBlock() (Block, error) {
-	var lastBlock Block
-
-	err := bc.DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte(blocksBucket))
-		lastHash := b.Get([]byte("l"))
-		blockData := b.Get(lastHash)
-		lastBlock = *DeserializeBlock(blockData)
-
-		return nil
-	})
-	if err != nil {
-		return lastBlock, err
-	}
-
-	return lastBlock, nil
-}
-
-// GetBlockByNumber find block with height(int)
-func (bc *Blockchain) GetBlockByNumber(height int) (Block, error) {
-	bci := bc.Iterator()
-
-	for {
-		block := bci.Next()
-
-		if block.Height == height {
-			return *block, nil
-		}
-
-		if len(block.PrevBlockHash) == 0 {
-			break
-		}
-	}
-
-	return Block{}, errors.New("Block is not found")
-}
-
 // GetBlock finds a block by its hash and returns it
 func (bc *Blockchain) GetBlock(blockHash []byte) (Block, error) {
 	var blk Block
