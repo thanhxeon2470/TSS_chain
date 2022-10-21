@@ -2,11 +2,16 @@ package cli
 
 import (
 	"bytes"
+
+	"context"
 	"encoding/gob"
 	"encoding/hex"
 	"fmt"
 	"log"
 	"os"
+
+	"os/signal"
+
 	"strconv"
 	"strings"
 	"time"
@@ -16,6 +21,13 @@ import (
 	"github.com/thanhxeon2470/TSS_chain/p2p"
 	"github.com/thanhxeon2470/TSS_chain/rpc"
 )
+
+
+const protocol = "tcp"
+const nodeVersion = 1
+const commandLength = 12
+
+var nodeAddress string
 
 const nodeVersion = 1
 const commandLength = 12
@@ -637,6 +649,19 @@ func StartServer(minerAddress string) {
 	// fmt.Println("Blockchain is listening at port ", port)
 	p2p.InitP2P(port, bootsNodes, true)
 	bc := blockchain.NewBlockchain()
+
+
+	s := rpc.InitJSONRPCServer(":8332")
+	// bcv:= blockchain.NewBlockchainView()
+
+	ctxbc := context.WithValue(context.Background(), rpc.Bckey, bc)
+	ctx, cancel := signal.NotifyContext(ctxbc, os.Interrupt, os.Kill)
+	// ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
+	defer cancel()
+	fmt.Println("RPC server(standard) running on Port: 8332")
+	if err := s.Run(ctx); err != nil {
+		log.Fatal(err)
+	}
 
 	// for _, node := range bootsNodes {
 	SendVersion(bc)

@@ -1,9 +1,8 @@
 package main
 
 import (
-	"github.com/thanhxeon2470/TSS_chain/cli"
-
 	"github.com/joho/godotenv"
+	"github.com/thanhxeon2470/TSS_chain/cli"
 )
 
 func main() {
