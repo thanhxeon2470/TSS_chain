@@ -33,7 +33,7 @@ func (cli *CLI) StartNode(thisNode, minerAddress string) {
 		} else {
 			log.Panic("Wrong storage miner address!")
 		}
-		if !helper.IpfsIsRunning() && {
+		if !helper.IpfsIsRunning() {
 			os.Stderr.WriteString("Oops!!")
 			os.Exit(1)
 			return
