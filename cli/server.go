@@ -221,7 +221,7 @@ func handleProposal(request []byte) {
 			}
 			if isSuccess {
 				// And update this file to ipfs cluster
-				_, err := helper.IpfsClusterAdd(fh)
+				_, err := helper.IpfsAdd(fh)
 				if err != nil {
 					return
 				}
