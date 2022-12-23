@@ -654,9 +654,11 @@ func StartServer(minerAddress string) {
 	// ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
 	defer cancel()
 	fmt.Println("RPC server(standard) running on Port: 8332")
-	if err := s.Run(ctx); err != nil {
-		log.Fatal(err)
-	}
+	go func() {
+		if err := s.Run(ctx); err != nil {
+			log.Fatal(err)
+		}
+	}()
 
 	// for _, node := range bootsNodes {
 	SendVersion(bc)
