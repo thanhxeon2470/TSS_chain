@@ -98,7 +98,6 @@ func (r *RPC) GetBlance(args *Args, res *Result) error {
 }
 
 func (r *RPC) SendProposal(args *Args, res *Result) error {
-	fmt.Println("\n\nNhan duoc proposal!!\n\n")
 	var payload Proposal
 
 	err := GobDecode(args.Req, &payload)
