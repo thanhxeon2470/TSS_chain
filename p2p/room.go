@@ -117,6 +117,7 @@ func (r *Room) handleEvents() {
 		select {
 		case input := <-data2Send:
 			// when the user types in a line, publish it to the chat room and print to the message window
+			Data2Handle <- input
 			err := r.Publish(input)
 			if err != nil {
 				printErr("publish error: %s", err)
